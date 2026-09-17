@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { CheckSquare } from "lucide-react";
+import { KpiSubmissionForm } from "@/components/submit/KpiSubmissionForm";
+import { MOCK_CHECKLIST } from "@/lib/data/mockEntities";
 
 export default function EntitySubmitPage() {
   return (
@@ -12,20 +11,8 @@ export default function EntitySubmitPage() {
           <CardHeader>
             <CardTitle>Quarterly APP Status - Q3 2026</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="jobs">Job Creation (Actual)</Label>
-              <Input id="jobs" type="number" placeholder="Enter number of jobs created" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="budget">Budget Spent (ZAR)</Label>
-              <Input id="budget" type="number" placeholder="e.g. 1500000" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="notes">Variance Notes</Label>
-              <Input id="notes" placeholder="Explain any deviations from target" />
-            </div>
-            <Button className="w-full mt-4">Save KPI Submission</Button>
+          <CardContent>
+            <KpiSubmissionForm />
           </CardContent>
         </Card>
       </div>
@@ -34,18 +21,22 @@ export default function EntitySubmitPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <CheckSquare className="h-5 w-5" /> Checklist
+              <CheckSquare className="h-5 w-5" aria-hidden="true" /> Checklist
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <div className="h-4 w-4 rounded-full border border-emerald-500 bg-emerald-500/20" /> 
-              <span>Strategic Plan Uploaded</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <div className="h-4 w-4 rounded-full border border-amber-500" /> 
-              <span>Financials Attached</span>
-            </div>
+            {MOCK_CHECKLIST.map((item) => (
+              <div key={item.id} className="flex items-center gap-2 text-sm">
+                <span
+                  role="img"
+                  aria-label={item.status === "done" ? "Complete" : "Pending"}
+                  className={`h-4 w-4 rounded-full border ${
+                    item.status === "done" ? "border-emerald-500 bg-emerald-500/20" : "border-amber-500"
+                  }`}
+                />
+                <span>{item.label}</span>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>

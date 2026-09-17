@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { loginAs } from "@/lib/auth/actions";
 
 export default function LoginPage() {
   return (
@@ -11,16 +11,21 @@ export default function LoginPage() {
           <CardDescription>Select a role to demo the application</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Link href="/dashboard" className="block">
-            <Button className="w-full h-12 text-md" variant="default">
+          <form action={loginAs.bind(null, "thandi")}>
+            <Button type="submit" className="w-full h-12 text-md" variant="default">
               Login as Thandi (Entity Officer)
             </Button>
-          </Link>
-          <Link href="/portfolio" className="block">
-            <Button className="w-full h-12 text-md" variant="secondary">
+          </form>
+          <form action={loginAs.bind(null, "sipho")}>
+            <Button type="submit" className="w-full h-12 text-md" variant="secondary">
               Login as Sipho (DSAC Oversight)
             </Button>
-          </Link>
+          </form>
+          <form action={loginAs.bind(null, "exec")}>
+            <Button type="submit" className="w-full h-12 text-md" variant="outline">
+              Login as DG (DSAC Executive)
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>

@@ -1,8 +1,23 @@
-import { apiRequest } from './client';
-import type { EntityDTO } from '../types/schema';
+import { apiRequest, USE_MOCK_DATA } from "./client";
+import { MOCK_ENTITIES, getEntityBySlug, type EntityRecord } from "@/lib/data/mockEntities";
+import type { EntityDTO } from "../types/schema";
 
-// Fetching from your C# backend
-export async function getEntities(): Promise<EntityDTO[]> {
-  // Update this URL later when your C# backend is ready
-  return apiRequest<EntityDTO[]>(`https://your-csharp-api.com/api/entities`);
+/** All entities in the current reporting cycle, for the DSAC portfolio view. */
+export async function getEntities(): Promise<EntityRecord[]> {
+  if (USE_MOCK_DATA) {
+    return MOCK_ENTITIES;
+  }
+  return apiRequest<EntityDTO[]>(`/api/entities`) as Promise<EntityRecord[]>;
+}
+
+/** A single entity by its URL slug (e.g. "arts-culture-trust"), or null if not found. */
+export async function getEntityBySlugOrThrow(slug: string): Promise<EntityRecord | null> {
+  if (USE_MOCK_DATA) {
+    return getEntityBySlug(slug) ?? null;
+  }
+  try {
+    return (await apiRequest<EntityRecord>(`/api/entities/${slug}`)) ?? null;
+  } catch {
+    return null;
+  }
 }
