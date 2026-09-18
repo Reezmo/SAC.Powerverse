@@ -19,9 +19,22 @@ export const metadata: Metadata = {
   description: "Entity and DSAC performance reporting portal",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className={cn("h-full", "antialiased", geistMono.variable, "font-sans", inter.variable)}>
+    <html
+      lang="en"
+      className={cn(
+        "h-full",
+        "antialiased",
+        geistMono.variable,
+        "font-sans",
+        inter.variable,
+      )}
+    >
       <body className="min-h-full bg-[#f5f7fb] text-slate-900">{children}</body>
     </html>
   );
