@@ -8,7 +8,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">SAC Powerverse</CardTitle>
-          <CardDescription>Select a role to demo the application</CardDescription>
+          <CardDescription>Select a role  </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form action={loginAs.bind(null, "thandi")}>
