@@ -1,4 +1,4 @@
-import { Globe, AlertTriangle } from "lucide-react";
+import { Globe, AlertTriangle, FileCheck } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { readSession } from "@/lib/auth/session";
@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/portfolio", label: "Portfolioo", icon: <Globe className="h-4 w-4" aria-hidden="true" /> },
   { href: "/alerts", label: "Alerts & Risk", icon: <AlertTriangle className="h-4 w-4" aria-hidden="true" /> },
   { href: "/kpi-builder", label: "KPI Builder", icon: <Globe className="h-4 w-4" aria-hidden="true" /> },
+  { href: "/submissions", label: "APP Submissions", icon: <FileCheck className="h-4 w-4" aria-hidden="true" /> },
 ];
 
 export default async function DSACLayout({ children }: { children: React.ReactNode }) {

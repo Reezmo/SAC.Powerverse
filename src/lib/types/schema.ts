@@ -125,6 +125,15 @@ export interface AppSubmission {
   rejectionReason?: string;
 }
 
+export interface AppSubmissionSummary {
+  id: string;
+  entityId: string;
+  entityName: string;
+  fileUrl: string;
+  uploadedAt: string;
+  status: AppSubmission["status"];
+}
+
 export interface AppIndicatorQuarter {
   id: string;
   appIndicatorId: string;
@@ -149,6 +158,20 @@ export interface AppIndicator {
   isApproved: boolean;
   status: "not_started" | "in_progress" | "completed";
   createdAt: string;
+}
+
+/** Matches AppIndicatorResponseDto exactly — the shape actually returned
+ * inline by GET /api/app-submissions/{id}, which is narrower than the full
+ * AppIndicator record (no appSubmissionId/entityId/createdAt). */
+export interface AppSubmissionIndicator {
+  id: string;
+  entityKpiId?: string;
+  name: string;
+  annualTarget?: number;
+  unit?: string;
+  matchConfidence?: "matched" | "unmatched" | "manual";
+  isApproved: boolean;
+  status: "not_started" | "in_progress" | "completed";
 }
 
 export interface IndicatorSummary {

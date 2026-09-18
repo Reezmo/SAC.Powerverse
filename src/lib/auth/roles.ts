@@ -63,6 +63,6 @@ export function roleKeyFromBackendRole(backendRole: string): RoleKey | null {
 
 export const ROUTE_ACCESS: Record<RoleKey, string[]> = {
   thandi: ["/dashboard", "/documents"],
-  sipho: ["/portfolio", "/alerts", "/entities", "/kpi-builder"],
-  exec: ["/portfolio", "/alerts", "/entities"], 
+  sipho: ["/portfolio", "/alerts", "/entities", "/kpi-builder", "/submissions"],
+  exec: ["/portfolio", "/alerts", "/entities"],
 };
