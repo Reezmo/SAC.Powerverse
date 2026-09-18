@@ -19,7 +19,7 @@ export default async function EntityLayout({ children }: { children: React.React
   const isAppActive = total > 0;
   
   // 1 alert if the APP is pending, 0 alerts if it is active.
-  const alertsCount = isAppActive ? 0 : 1; 
+  const alertsCount = isAppActive ? 0 : 1;
 
   return (
     <div className="flex min-h-screen">

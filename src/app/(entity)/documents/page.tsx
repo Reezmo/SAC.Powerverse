@@ -44,30 +44,27 @@ export default async function EntityDocumentsPage() {
     redirect("/login");
   }
 
-  // 1. Fetch Real Granular Tasks
   const indicatorsResponse = await getEntityIndicators(entityId, 1, 50).catch(() => null);
   const indicators = Array.isArray(indicatorsResponse) ? indicatorsResponse : (indicatorsResponse?.data || []);
   const total = Array.isArray(indicatorsResponse) ? indicatorsResponse.length : (indicatorsResponse?.total || indicators.length);
   
-  // Real DB Check: If tasks exist, the APP has been approved.
   const isAppActive = total > 0;
   const completedTasks = indicators.filter((ind: any) => ind.status === 'completed');
 
-  // 2. Fetch general documents
   let documents: DisplayDoc[] = [];
   if (USE_MOCK_DATA) {
-    const entity = MOCK_ENTITIES.find(e => e.id === entityId) || MOCK_ENTITIES[0];
-    documents = entity.documents.map((d) => ({ 
+    const entity = MOCK_ENTITIES.find((e: any) => e.id === entityId) || MOCK_ENTITIES[0];
+    documents = entity.documents.map((d: any) => ({ 
       ...d, 
       tag: DOC_TYPE_LABELS[inferDocType(d.name)] ?? "Uncategorized" 
     }));
   } else {
     const entities = await getEntities();
-    const own = entities.find((e) => String(e.id) === entityId);
+    const own = entities.find((e: any) => String(e.id) === entityId);
     if (own) {
       const detail = await getEntityBySlugOrThrow(own.slug);
       if (detail && "documents" in detail) {
-        documents = detail.documents.map((d) => ({ 
+        documents = detail.documents.map((d: any) => ({ 
           ...d, 
           tag: DOC_TYPE_LABELS[inferDocType(d.name)] ?? "Uncategorized" 
         }));
@@ -75,7 +72,6 @@ export default async function EntityDocumentsPage() {
     }
   }
 
-  // 3. Mock APP Submission History (Future DB endpoint placeholder)
   let appHistory: AppHistoryEntry[] = [];
   if (isAppActive) {
     appHistory = [
@@ -91,9 +87,8 @@ export default async function EntityDocumentsPage() {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold tracking-tight">Documents & Submissions</h2>
       
-      {/* Top Row: APP Upload & APP Submission History */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <AppUploadForm isAppActive={isAppActive} />
+        <AppUploadForm entityId={entityId} isAppActive={isAppActive} />
 
         <Card>
           <CardHeader>
@@ -138,7 +133,6 @@ export default async function EntityDocumentsPage() {
         </Card>
       </div>
 
-      {/* Middle Row: Task Evidence (Proof Documents) */}
       <Card className={!isAppActive ? "opacity-60 grayscale pointer-events-none" : ""}>
         <CardHeader>
           <CardTitle>Task Evidence (Proof Documents)</CardTitle>
@@ -179,7 +173,6 @@ export default async function EntityDocumentsPage() {
         </CardContent>
       </Card>
 
-      {/* Bottom Row: General Compliance Repository */}
       <DocumentUploader entityId={entityId} initialDocs={documents} />
     </div>
   );

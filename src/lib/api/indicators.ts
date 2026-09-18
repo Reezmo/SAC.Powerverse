@@ -50,7 +50,6 @@ export async function getEntityIndicators(entityId: string, page = 1, pageSize =
     }
     
     if (entityId === "3") {
-      // Only return Bianca's tasks if the APP has been uploaded in this session
       const hasUploaded = (globalThis as any).__MOCK_BIANCA_UPLOADED;
       if (!hasUploaded) return { data: [], total: 0 };
       
@@ -67,7 +66,6 @@ export async function submitQuarterProof(indicatorId: string, quarter: number, f
   if (USE_MOCK_DATA) {
     await new Promise(resolve => setTimeout(resolve, 800)); 
     
-    // Update local memory so status flips to completed instantly
     MOCK_THANDI_TASKS = MOCK_THANDI_TASKS.map(t => t.id === indicatorId ? { ...t, status: 'completed' } : t);
     MOCK_BIANCA_TASKS = MOCK_BIANCA_TASKS.map(t => t.id === indicatorId ? { ...t, status: 'completed' } : t);
 
@@ -80,25 +78,21 @@ export async function submitQuarterProof(indicatorId: string, quarter: number, f
   });
 }
 
-// ==========================================
-// RESTORED SIPHO OVERSIGHT FUNCTIONS
-// ==========================================
-
-export async function getIndicatorDetails(id: string): Promise<{ indicator: AppIndicator; quarters: AppIndicatorQuarter[] }> {
+export async function getIndicatorDetails(id: string): Promise<{ indicator: AppIndicator; quarters: AppIndicatorQuarter[] } | null> {
   if (USE_MOCK_DATA) {
-    throw new Error("Mock data not implemented for indicator details");
+    return null;
   }
   const session = await readSession();
-  return apiRequest(`/api/indicators/${id}`, session?.token);
+  return apiRequest<{ indicator: AppIndicator; quarters: AppIndicatorQuarter[] }>(`/api/indicators/${id}`, session?.token);
 }
 
 export async function getIndicatorSummary(): Promise<IndicatorSummary[]> {
   if (USE_MOCK_DATA) {
     return [
-      { entityId: "1", entityName: "Arts & Culture Trust", percentComplete: 65, percentRemaining: 35 },
-      { entityId: "2", entityName: "National Heritage Council", percentComplete: 20, percentRemaining: 80 }
+      { entityId: "1", entityName: "Arts & Culture Trust", percentComplete: 65, percentRemaining: 35, totalIndicators: 10 },
+      { entityId: "2", entityName: "National Heritage Council", percentComplete: 20, percentRemaining: 80, totalIndicators: 5 }
     ];
   }
   const session = await readSession();
   return apiRequest<IndicatorSummary[]>('/api/dsac/indicator-summary', session?.token);
-} 
+}
