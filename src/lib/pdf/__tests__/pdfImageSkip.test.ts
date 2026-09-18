@@ -54,7 +54,7 @@ describe("skipReason", () => {
     expect(reason).toBe("already tiny");
   });
 
-  it("skips unrecognised colour spaces", async () => {
+  it("skips unrecognised color spaces", async () => {
     const doc = await PDFDocument.create();
     const dict = doc.context.obj({
       Type: "XObject",
@@ -66,6 +66,6 @@ describe("skipReason", () => {
       Filter: "DCTDecode",
     });
     const reason = skipReason(dict, 5000, 800, 600, describeColorSpace(dict), ["DCTDecode"]);
-    expect(reason).toMatch(/unrecognised colour space/);
+    expect(reason).toMatch(/unrecognised color space/);
   });
 });
