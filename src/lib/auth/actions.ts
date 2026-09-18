@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { createSession, destroySession } from "./session";
-import { TEST_CREDENTIALS } from "./roles";
-import { API_BASE_URL, USE_MOCK_DATA } from "@/lib/api/client";
+import { isRoleKey, roles, DEMO_CREDENTIALS, type RoleKey } from "./roles";
+import { API_BASE_URL, USE_MOCK_DATA, ApiError } from "@/lib/api/client";
 
 interface LoginResponse {
   token: string;
@@ -22,59 +22,43 @@ function decodeJwtClaims(token: string): JwtClaims {
   return JSON.parse(json) as JwtClaims;
 }
 
-export async function loginWithCredentials(formData: FormData): Promise<{ error: string } | void> {
-  const email = formData.get("email")?.toString() || "";
-  const password = formData.get("password")?.toString() || "";
-
-  let tokenToUse = "";
-  let roleToUse = "";
-  let entityIdToUse: string | null = null;
-
-  if (USE_MOCK_DATA) {
-    // Mock Matching Logic
-    if (email === TEST_CREDENTIALS.thandi.email && password === TEST_CREDENTIALS.thandi.password) {
-      roleToUse = "entity_officer";
-      entityIdToUse = "1";
-    } else if (email === TEST_CREDENTIALS.bianca.email && password === TEST_CREDENTIALS.bianca.password) {
-      roleToUse = "entity_officer";
-      entityIdToUse = "3"; // Triggers the "Pending APP" flow
-    } else if (email === TEST_CREDENTIALS.sipho.email && password === TEST_CREDENTIALS.sipho.password) {
-      roleToUse = "dsac_me";
-    } else if (email === TEST_CREDENTIALS.exec.email && password === TEST_CREDENTIALS.exec.password) {
-      roleToUse = "dsac_exec";
-    } else {
-      return { error: "Invalid credentials." };
-    }
-    tokenToUse = `mock-token-${Date.now()}`;
-  } else {
-    // Real API Logic
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        return { error: "Invalid email or password." };
-      }
-
-      const { token } = (await response.json()) as LoginResponse;
-      const claims = decodeJwtClaims(token);
-      
-      tokenToUse = token;
-      roleToUse = claims.role;
-      entityIdToUse = claims.entity_id ?? null;
-    } catch {
-      return { error: "Could not reach the API. Please try again later." };
-    }
+export async function loginAs(role: string) {
+  if (!isRoleKey(role)) {
+    throw new Error(`Unknown role: ${role}`);
   }
 
-  // Create session and route based on role
-  await createSession(tokenToUse, roleToUse, entityIdToUse);
-  const route = roleToUse === "entity_officer" ? "/dashboard" : "/portfolio";
-  redirect(route);
+  if (USE_MOCK_DATA) {
+    const mockBackendRole = role === "thandi" ? "entity_officer" : role === "sipho" ? "dsac_me" : "dsac_exec";
+    // To test the "Pending APP" flow, change "1" to "3" here temporarily.
+    const mockEntityId = role === "thandi" ? "1" : null; 
+    
+    await createSession(`mock-token-${role}`, mockBackendRole, mockEntityId);
+    redirect(roles[role as RoleKey].homePath);
+  }
+
+  const { email, password } = DEMO_CREDENTIALS[role as RoleKey];
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      cache: "no-store",
+    });
+  } catch {
+    throw new ApiError("Could not reach the API to log in. Check NEXT_PUBLIC_API_URL.");
+  }
+
+  if (!response.ok) {
+    throw new ApiError(`Login failed with status ${response.status}`, response.status);
+  }
+
+  const { token } = (await response.json()) as LoginResponse;
+  const claims = decodeJwtClaims(token);
+
+  await createSession(token, claims.role, claims.entity_id ?? null);
+  redirect(roles[role as RoleKey].homePath);
 }
 
 export async function logout() {

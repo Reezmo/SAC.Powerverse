@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 /**
  * Base URL for the C# backend. Set NEXT_PUBLIC_API_URL in `.env.local` (and
  * in Vercel's project env vars) once the real API is available. Until then,
@@ -42,6 +44,12 @@ export async function apiRequest<T>(path: string, token?: string, init?: Request
     response = await fetch(url, { cache: "no-store", ...init, headers });
   } catch {
     throw new ApiError(`Network error while requesting ${url}`, undefined);
+  }
+
+  // Self-healing: If the backend rejects the token (e.g., stale mock cookie, expired JWT), 
+  // immediately kick the user back to the login page to re-authenticate.
+  if (response.status === 401) {
+    redirect("/login");
   }
 
   if (!response.ok) {

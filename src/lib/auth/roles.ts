@@ -10,10 +10,8 @@ export interface RoleDefinition {
   homePath: string;
 }
 
-// Credentials kept here for testing the credentials login form
-export const TEST_CREDENTIALS = {
+export const DEMO_CREDENTIALS: Record<RoleKey, { email: string; password: string }> = {
   thandi: { email: "thandi@example.com", password: "Password123!" },
-  bianca: { email: "bianca@example.com", password: "Password123!" }, // Kept for testing pending APP
   sipho: { email: "sipho@example.com", password: "Password123!" },
   exec: { email: "exec@example.com", password: "Password123!" },
 };
@@ -53,7 +51,7 @@ export function isRoleKey(value: string | undefined): value is RoleKey {
 export function roleKeyFromBackendRole(backendRole: string): RoleKey | null {
   switch (backendRole) {
     case "entity_officer":
-      return "thandi"; // "thandi" represents the generic entity UI layout
+      return "thandi";
     case "dsac_me":
       return "sipho";
     case "dsac_exec":
