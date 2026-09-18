@@ -13,7 +13,10 @@ export interface RoleDefinition {
 // Demo login credentials for the 3 seeded backend users. The login page has
 // one button per role instead of a credential form (see login/page.tsx) —
 // these are what each button sends to POST /api/auth/login.
-export const DEMO_CREDENTIALS: Record<RoleKey, { email: string; password: string }> = {
+export const DEMO_CREDENTIALS: Record<
+  RoleKey,
+  { email: string; password: string }
+> = {
   thandi: { email: "thandi@example.com", password: "Password123!" },
   sipho: { email: "sipho@example.com", password: "Password123!" },
   exec: { email: "exec@example.com", password: "Password123!" },
@@ -67,6 +70,6 @@ export function roleKeyFromBackendRole(backendRole: string): RoleKey | null {
 
 export const ROUTE_ACCESS: Record<RoleKey, string[]> = {
   thandi: ["/dashboard", "/submit", "/documents"],
-  sipho: ["/portfolio", "/alerts", "/entities"],
+  sipho: ["/portfolio", "/alerts", "/entities", "/kpi-builder"],
   exec: ["/portfolio", "/alerts", "/entities"], // The Exec shares the DSAC portfolio view
 };

@@ -10,7 +10,6 @@ export type UserRole = "entity_officer" | "dsac_me" | "dsac_exec";
 export type SubmissionStatusValue = "Submitted" | "In Progress" | "Not Started";
 export type RiskLevel = "Low" | "Watch" | "High";
 
-
 /** GET /api/entities — one row per entity, for the portfolio table. */
 export interface EntityPortfolioDTO {
   id: string;
@@ -99,7 +98,7 @@ export interface EntityKpi {
   unit?: string;
   fiveYearTarget?: number;
   formValues: string;
-  status: 'draft' | 'sent' | 'received';
+  status: "draft" | "sent" | "received";
   createdBy?: string;
   createdAt: string;
   sentAt?: string;
@@ -112,7 +111,12 @@ export interface AppSubmission {
   fileUrl: string;
   uploadedBy?: string;
   uploadedAt: string;
-  status: 'pending_review' | 'ai_failed' | 'ai_processed' | 'approved' | 'rejected';
+  status:
+    | "pending_review"
+    | "ai_failed"
+    | "ai_processed"
+    | "approved"
+    | "rejected";
   aiSummary?: string;
   aiProcessedAt?: string;
   aiProcessedBy?: string;
@@ -126,7 +130,7 @@ export interface AppIndicatorQuarter {
   appIndicatorId: string;
   quarter: number;
   quarterTarget?: number;
-  status: 'not_started' | 'completed';
+  status: "not_started" | "completed";
   proofFileUrl?: string;
   proofNotes?: string;
   completedBy?: string;
@@ -141,9 +145,9 @@ export interface AppIndicator {
   name: string;
   annualTarget?: number;
   unit?: string;
-  matchConfidence?: 'matched' | 'unmatched' | 'manual';
+  matchConfidence?: "matched" | "unmatched" | "manual";
   isApproved: boolean;
-  status: 'not_started' | 'in_progress' | 'completed';
+  status: "not_started" | "in_progress" | "completed";
   createdAt: string;
 }
 
@@ -152,4 +156,35 @@ export interface IndicatorSummary {
   entityName: string;
   percentComplete: number;
   percentRemaining: number;
+}
+
+export type FieldType =
+  | "text"
+  | "email"
+  | "tel"
+  | "za-id"
+  | "passport"
+  | "date"
+  | "select"
+  | "radio"
+  | "checkbox"
+  | "currency"
+  | "textarea";
+
+export interface FieldOption {
+  value: string;
+  label: string;
+}
+
+export interface FieldValidation {
+  required?: boolean;
+}
+
+export interface FieldDef {
+  id: string;
+  type: FieldType;
+  label: string;
+  helperText?: string;
+  options?: FieldOption[];
+  validation: FieldValidation;
 }
