@@ -31,6 +31,9 @@ const MAX_PAGE_UNITS = 14000;
  */
 function deepCopy(object: unknown, src: PDFContext, dest: PDFContext, seen: Map<string, PDFRef>): unknown {
   if (object instanceof PDFRef) {
+    // Cycles in a PDF object graph only occur through indirect references, so
+    // memoizing only this branch is sufficient to prevent infinite recursion —
+    // a dict/array/stream can never directly contain itself.
     const key = object.tag;
     const existing = seen.get(key);
     if (existing) return existing;
@@ -79,6 +82,10 @@ async function wrapImageInPdf(
   width: number,
   height: number,
 ): Promise<{ bytes: Uint8Array; pageWidth: number }> {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    throw new Error(`Invalid image dimensions: ${width}x${height}`);
+  }
+
   const scratch = await PDFDocument.create();
   const dest = scratch.context;
 
