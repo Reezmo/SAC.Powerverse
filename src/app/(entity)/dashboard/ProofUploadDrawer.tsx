@@ -1,7 +1,7 @@
-// src/app/(entity)/dashboard/ProofUploadDrawer.tsx
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { submitQuarterProof } from "@/lib/api/indicators";
 import { Check, UploadCloud } from "lucide-react";
 
 export function ProofUploadDrawer({ indicatorId, taskName }: { indicatorId: string; taskName: string }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -18,11 +19,14 @@ export function ProofUploadDrawer({ indicatorId, taskName }: { indicatorId: stri
     setIsSubmitting(true);
     
     const formData = new FormData(e.currentTarget);
-    // Hardcoded quarter 1 for this example; in a full implementation, you'd select the quarter
     await submitQuarterProof(indicatorId, 1, formData);
     
     setIsSubmitting(false);
     setIsSuccess(true);
+    
+    // Refresh the dashboard data
+    router.refresh();
+
     setTimeout(() => {
       setIsOpen(false);
       setIsSuccess(false);
