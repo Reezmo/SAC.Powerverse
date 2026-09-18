@@ -77,7 +77,7 @@ export default function LoginPage() {
               <span><strong>DG</strong> (DSAC Exec):</span>
               <span>{TEST_CREDENTIALS.exec.email}</span>
             </div>
-            <div className="pt-2 text-center font-medium">
+            <div className="pt-2 text-center font-medium ">
               Password for all: <span className="text-foreground">Password123!</span>
             </div>
           </CardContent>
