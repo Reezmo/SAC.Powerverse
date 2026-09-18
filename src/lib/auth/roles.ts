@@ -19,8 +19,9 @@ export const DEMO_CREDENTIALS: Record<RoleKey, { email: string; password: string
 export const roles: Record<RoleKey, RoleDefinition> = {
   thandi: {
     role: "thandi",
-    displayName: "Entity Officer",
+    displayName: "Thandi",
     title: "Entity Officer",
+    entityName: "Arts & Culture Trust (ACT)",
     canAccessEntity: true,
     canAccessPortfolio: false,
     homePath: "/dashboard",
@@ -47,7 +48,6 @@ export function isRoleKey(value: string | undefined): value is RoleKey {
   return value === "thandi" || value === "sipho" || value === "exec";
 }
 
-/** Maps the backend's role claim to a generic frontend RoleKey. */
 export function roleKeyFromBackendRole(backendRole: string): RoleKey | null {
   switch (backendRole) {
     case "entity_officer":
@@ -63,6 +63,6 @@ export function roleKeyFromBackendRole(backendRole: string): RoleKey | null {
 
 export const ROUTE_ACCESS: Record<RoleKey, string[]> = {
   thandi: ["/dashboard", "/documents"],
-  sipho: ["/portfolio", "/alerts", "/entities", "/kpi-builder"],
+  sipho: ["/portfolio", "/alerts", "/entities", "/kpi-builder", "/submissions"],
   exec: ["/portfolio", "/alerts", "/entities"], 
 };

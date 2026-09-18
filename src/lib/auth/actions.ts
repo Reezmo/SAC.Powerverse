@@ -29,7 +29,6 @@ export async function loginAs(role: string) {
 
   if (USE_MOCK_DATA) {
     const mockBackendRole = role === "thandi" ? "entity_officer" : role === "sipho" ? "dsac_me" : "dsac_exec";
-    // To test the "Pending APP" flow, change "1" to "3" here temporarily.
     const mockEntityId = role === "thandi" ? "1" : null; 
     
     await createSession(`mock-token-${role}`, mockBackendRole, mockEntityId);

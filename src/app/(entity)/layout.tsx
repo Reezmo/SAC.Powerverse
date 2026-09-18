@@ -2,6 +2,7 @@ import { LayoutDashboard, UploadCloud } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { readSession } from "@/lib/auth/session";
+import { getEntityIndicators } from "@/lib/api/indicators";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" aria-hidden="true" /> },
@@ -10,11 +11,12 @@ const NAV_ITEMS = [
 
 export default async function EntityLayout({ children }: { children: React.ReactNode }) {
   const session = await readSession();
-  const entityId = session?.entityId;
+  const entityId = session?.entityId || "";
 
-  // Determine dynamic state to update the notification bell
-  const hasUploaded = entityId === "3" ? (globalThis as any).__MOCK_BIANCA_UPLOADED : false;
-  const isAppActive = entityId === "1" || hasUploaded;
+  // Real database check: if they have extracted tasks, the APP is active.
+  const indRes = await getEntityIndicators(entityId, 1, 1).catch(() => null);
+  const total = Array.isArray(indRes) ? indRes.length : (indRes?.total || 0);
+  const isAppActive = total > 0;
   
   // 1 alert if the APP is pending, 0 alerts if it is active.
   const alertsCount = isAppActive ? 0 : 1; 

@@ -38,16 +38,22 @@ const DOC_TYPE_LABELS: Record<string, string> = {
 
 export default async function EntityDocumentsPage() {
   const session = await readSession();
-  const entityId = String(session?.entityId || "1");
+  const entityId = String(session?.entityId || "");
 
   if (!session?.entityId && !USE_MOCK_DATA) {
     redirect("/login");
   }
 
-  const hasUploaded = entityId === "3" ? (globalThis as any).__MOCK_BIANCA_UPLOADED : false;
-  const isAppActive = entityId === "1" || hasUploaded;
+  // 1. Fetch Real Granular Tasks
+  const indicatorsResponse = await getEntityIndicators(entityId, 1, 50).catch(() => null);
+  const indicators = Array.isArray(indicatorsResponse) ? indicatorsResponse : (indicatorsResponse?.data || []);
+  const total = Array.isArray(indicatorsResponse) ? indicatorsResponse.length : (indicatorsResponse?.total || indicators.length);
+  
+  // Real DB Check: If tasks exist, the APP has been approved.
+  const isAppActive = total > 0;
+  const completedTasks = indicators.filter((ind: any) => ind.status === 'completed');
 
-  // 1. Fetch general documents
+  // 2. Fetch general documents
   let documents: DisplayDoc[] = [];
   if (USE_MOCK_DATA) {
     const entity = MOCK_ENTITIES.find(e => e.id === entityId) || MOCK_ENTITIES[0];
@@ -57,7 +63,7 @@ export default async function EntityDocumentsPage() {
     }));
   } else {
     const entities = await getEntities();
-    const own = entities.find((e) => e.id === entityId);
+    const own = entities.find((e) => String(e.id) === entityId);
     if (own) {
       const detail = await getEntityBySlugOrThrow(own.slug);
       if (detail && "documents" in detail) {
@@ -69,24 +75,17 @@ export default async function EntityDocumentsPage() {
     }
   }
 
-  // 2. Mock APP Submission History (Explicitly typed as AppHistoryEntry array)
+  // 3. Mock APP Submission History (Future DB endpoint placeholder)
   let appHistory: AppHistoryEntry[] = [];
-  
-  if (entityId === "1") {
+  if (isAppActive) {
     appHistory = [
-      { id: "app-2", date: "2026-09-01", status: "approved", reason: "Approved by DSAC. Tasks Extracted.", file: "APP_2026_Final.pdf" },
-      { id: "app-1", date: "2026-08-15", status: "rejected", reason: "Missing demographic targets for Q4.", file: "APP_2026_Draft_v1.pdf" }
+      { id: "app-2", date: "2026-09-01", status: "approved", reason: "Approved by DSAC. Tasks Extracted.", file: "APP_2026_Final.pdf" }
     ];
-  } else if (entityId === "3" && hasUploaded) {
+  } else {
     appHistory = [
-      { id: "app-3", date: "Just now", status: "pending", reason: "Pending AI Extraction & DSAC Review", file: "Bianca_APP.pdf" }
+      { id: "app-1", date: "2026-08-15", status: "pending", reason: "Awaiting APP Upload", file: "None" }
     ];
   }
-
-  // 3. Fetch completed tasks to show "Task Evidence" linked proofs
-  const indicatorsResponse = await getEntityIndicators(entityId, 1, 50).catch(() => null);
-  const indicators = indicatorsResponse?.data || [];
-  const completedTasks = indicators.filter((ind: any) => ind.status === 'completed');
 
   return (
     <div className="space-y-6">
@@ -140,7 +139,7 @@ export default async function EntityDocumentsPage() {
       </div>
 
       {/* Middle Row: Task Evidence (Proof Documents) */}
-      <Card>
+      <Card className={!isAppActive ? "opacity-60 grayscale pointer-events-none" : ""}>
         <CardHeader>
           <CardTitle>Task Evidence (Proof Documents)</CardTitle>
           <CardDescription>Documents securely linked as proof for completed granular tasks.</CardDescription>

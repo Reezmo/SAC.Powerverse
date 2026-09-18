@@ -80,6 +80,25 @@ export async function submitQuarterProof(indicatorId: string, quarter: number, f
   });
 }
 
-// Stubs for Sipho's side
-export async function getIndicatorDetails(id: string): Promise<any> { return null; }
-export async function getIndicatorSummary(): Promise<any[]> { return []; }
+// ==========================================
+// RESTORED SIPHO OVERSIGHT FUNCTIONS
+// ==========================================
+
+export async function getIndicatorDetails(id: string): Promise<{ indicator: AppIndicator; quarters: AppIndicatorQuarter[] }> {
+  if (USE_MOCK_DATA) {
+    throw new Error("Mock data not implemented for indicator details");
+  }
+  const session = await readSession();
+  return apiRequest(`/api/indicators/${id}`, session?.token);
+}
+
+export async function getIndicatorSummary(): Promise<IndicatorSummary[]> {
+  if (USE_MOCK_DATA) {
+    return [
+      { entityId: "1", entityName: "Arts & Culture Trust", percentComplete: 65, percentRemaining: 35 },
+      { entityId: "2", entityName: "National Heritage Council", percentComplete: 20, percentRemaining: 80 }
+    ];
+  }
+  const session = await readSession();
+  return apiRequest<IndicatorSummary[]>('/api/dsac/indicator-summary', session?.token);
+} 
