@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState, type DragEvent } from "react";
+import { useRef, useState, useTransition, type DragEvent } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UploadCloud, File, MessageSquare } from "lucide-react";
+import { uploadDocumentAction } from "@/lib/api/documents-actions";
+import { inferDocType } from "@/lib/api/documents";
 
 interface UploadedDoc {
   id: string;
@@ -16,24 +18,48 @@ interface UploadedDoc {
 const ACCEPTED_TYPES = [".pdf", ".xlsx", ".docx"];
 const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50MB, matches the copy on this page
 
-function inferTag(fileName: string): string {
-  const lower = fileName.toLowerCase();
-  if (lower.includes("financ") || lower.includes("budget")) return "Auto-tagged: Budget Spend";
-  if (lower.includes("job") || lower.includes("beneficiar")) return "Auto-tagged: Job Creation";
-  return "Auto-tagged: Pending review";
+const DOC_TYPE_LABELS: Record<string, string> = {
+  financials: "Auto-tagged: Financials",
+  annual_report: "Auto-tagged: Annual Report",
+  quarterly_report: "Auto-tagged: Quarterly Report",
+  strategic_plan: "Auto-tagged: Strategic Plan",
+  operational_plan: "Auto-tagged: Operational Plan",
+  app: "Auto-tagged: Annual Performance Plan",
+};
+
+function tagFor(fileName: string): string {
+  return DOC_TYPE_LABELS[inferDocType(fileName)] ?? "Auto-tagged: Pending review";
 }
 
-export function DocumentUploader({ initialDocs }: { initialDocs: UploadedDoc[] }) {
+export function DocumentUploader({ entityId, initialDocs }: { entityId: string; initialDocs: UploadedDoc[] }) {
   const [docs, setDocs] = useState<UploadedDoc[]>(initialDocs);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  function uploadOne(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("entityId", entityId);
+
+    startTransition(async () => {
+      try {
+        await uploadDocumentAction(formData);
+        setDocs((prev) => [
+          { id: `${file.name}-${Date.now()}`, name: file.name, uploadedAt: "Just now", tag: tagFor(file.name) },
+          ...prev,
+        ]);
+      } catch {
+        setError(`Failed to upload "${file.name}". Please try again.`);
+      }
+    });
+  }
 
   function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
     setError(null);
 
-    const accepted: UploadedDoc[] = [];
     for (const file of Array.from(fileList)) {
       const hasValidExtension = ACCEPTED_TYPES.some((ext) => file.name.toLowerCase().endsWith(ext));
       if (!hasValidExtension) {
@@ -44,16 +70,7 @@ export function DocumentUploader({ initialDocs }: { initialDocs: UploadedDoc[] }
         setError(`"${file.name}" is larger than the 50MB limit.`);
         continue;
       }
-      accepted.push({
-        id: `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        name: file.name,
-        uploadedAt: "Just now",
-        tag: inferTag(file.name),
-      });
-    }
-
-    if (accepted.length > 0) {
-      setDocs((prev) => [...accepted, ...prev]);
+      uploadOne(file);
     }
   }
 
@@ -93,12 +110,15 @@ export function DocumentUploader({ initialDocs }: { initialDocs: UploadedDoc[] }
             aria-label="Upload documents"
           >
             <UploadCloud className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
-            <p className="text-sm font-medium">Drag & drop files or click to browse</p>
+            <p className="text-sm font-medium">
+              {isPending ? "Uploading..." : "Drag & drop files or click to browse"}
+            </p>
             <p className="text-xs text-muted-foreground">Supports PDF, XLSX, DOCX up to 50MB</p>
             <Button
               type="button"
               className="mt-4"
               variant="secondary"
+              disabled={isPending}
               onClick={(e) => {
                 e.stopPropagation();
                 inputRef.current?.click();

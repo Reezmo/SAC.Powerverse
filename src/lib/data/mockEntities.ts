@@ -1,16 +1,18 @@
-import type { EntityDTO, SubmissionDTO } from "@/lib/types/schema";
+import type { EntityType, SubmissionDTO } from "@/lib/types/schema";
 
 // ---------------------------------------------------------------------------
-// Single source of truth for demo data.
-//
-// This intentionally mirrors the shape of `EntityDTO` / `SubmissionDTO` from
-// `lib/types/schema.ts` so that swapping `lib/api/*` from mock data to the
-// real C# backend later requires no changes to the pages/hooks that consume
-// it — only `USE_MOCK_DATA` (see `lib/api/client.ts`) needs to flip.
+// Single source of truth for demo data (used only when NEXT_PUBLIC_API_URL
+// is unset — see USE_MOCK_DATA in lib/api/client.ts). Kept self-contained
+// (not extending the real backend DTOs in lib/types/schema.ts) since the
+// mock shape doesn't need to track the live API's shape exactly.
 // ---------------------------------------------------------------------------
 
-export interface EntityRecord extends EntityDTO {
+export interface EntityRecord {
+  id: string;
   slug: string;
+  name: string;
+  type: EntityType;
+  createdAt: string;
   status: "Submitted" | "In Progress" | "Not Started";
   risk: "Low" | "Watch" | "High";
   score: number;
@@ -24,7 +26,7 @@ export const MOCK_ENTITIES: EntityRecord[] = [
     slug: "arts-culture-trust",
     name: "Arts & Culture Trust",
     type: "public_entity",
-    created_at: "2024-01-15T00:00:00.000Z",
+    createdAt: "2024-01-15T00:00:00.000Z",
     status: "Submitted",
     risk: "Low",
     score: 92,
@@ -42,7 +44,7 @@ export const MOCK_ENTITIES: EntityRecord[] = [
     slug: "national-heritage-council",
     name: "National Heritage Council",
     type: "public_entity",
-    created_at: "2024-02-01T00:00:00.000Z",
+    createdAt: "2024-02-01T00:00:00.000Z",
     status: "In Progress",
     risk: "Watch",
     score: 68,
@@ -57,7 +59,7 @@ export const MOCK_ENTITIES: EntityRecord[] = [
     slug: "pan-south-african-language-board",
     name: "Pan South African Language Board",
     type: "public_entity",
-    created_at: "2024-01-20T00:00:00.000Z",
+    createdAt: "2024-01-20T00:00:00.000Z",
     status: "Not Started",
     risk: "High",
     score: 45,
@@ -72,11 +74,13 @@ export function getEntityBySlug(slug: string): EntityRecord | undefined {
 
 export const MOCK_SUBMISSIONS: SubmissionDTO[] = MOCK_ENTITIES.map((e) => ({
   id: `sub-${e.id}`,
-  entity_id: e.id,
-  cycle_id: "2026-q3",
+  entityId: e.id,
+  entityName: e.name,
+  cycleId: "2026-q3",
+  cycleLabel: "Q3 2026",
   status:
     e.status === "Submitted" ? "submitted" : e.status === "In Progress" ? "in_progress" : "not_started",
-  submitted_at: e.status === "Submitted" ? "2026-10-12T09:00:00.000Z" : null,
+  submittedAt: e.status === "Submitted" ? "2026-10-12T09:00:00.000Z" : null,
 }));
 
 export const MOCK_ALERTS = [

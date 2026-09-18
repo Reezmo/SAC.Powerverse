@@ -1,7 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AlertsList } from "@/components/alerts/AlertsList";
+
+// alerts-actions.ts is a "use server" module that (via lib/auth/session.ts)
+// imports the server-only package — Next.js strips that boundary in real
+// builds, but Vitest executes the module graph directly, so it needs a mock.
+vi.mock("@/lib/api/alerts-actions", () => ({
+  followUpOnAlert: vi.fn().mockResolvedValue({ ok: true }),
+}));
 
 const alerts = [
   {

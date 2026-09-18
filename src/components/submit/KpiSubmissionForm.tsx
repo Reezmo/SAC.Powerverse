@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { kpiSubmissionSchema, type KpiSubmissionFormInput, type KpiSubmissionFormValues } from "@/lib/validation/kpiSubmission";
-import { submitKpiReport } from "@/lib/api/submissions";
+import { submitKpiReport } from "@/lib/api/submissions-actions";
 
 export function KpiSubmissionForm() {
   const [submitState, setSubmitState] = useState<"idle" | "success" | "error">("idle");

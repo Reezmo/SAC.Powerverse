@@ -1,18 +1,55 @@
+import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
 import { DocumentUploader } from "@/components/documents/DocumentUploader";
-import { getEntities } from "@/lib/api/entities";
-import { MOCK_CHECKLIST } from "@/lib/data/mockEntities";
+import { readSession } from "@/lib/auth/session";
+import { getEntities, getEntityBySlugOrThrow } from "@/lib/api/entities";
+import { MOCK_CHECKLIST, MOCK_ENTITIES } from "@/lib/data/mockEntities";
+import { USE_MOCK_DATA } from "@/lib/api/client";
+
+interface DisplayDoc {
+  id: string;
+  name: string;
+  uploadedAt: string;
+  tag: string;
+}
 
 export default async function EntityDocumentsPage() {
-  // Demo mode has a single logged-in entity; in the real API this would be
-  // scoped to the signed-in entity's id via the session.
-  const [entity] = await getEntities();
+  if (USE_MOCK_DATA) {
+    const [entity] = MOCK_ENTITIES;
+    return renderPage(
+      entity.id,
+      entity.documents.map((d) => ({ ...d, tag: "Auto-tagged: On file" }))
+    );
+  }
 
+  const session = await readSession();
+  if (!session?.entityId) {
+    redirect("/login");
+  }
+
+  // We only have the entity id from the session claim, not the slug, so
+  // list-then-find avoids adding a slug-less "by id" API just for this.
+  const entities = await getEntities();
+  const own = entities.find((e) => e.id === session.entityId);
+  if (!own) {
+    return renderPage(session.entityId, []);
+  }
+
+  const detail = await getEntityBySlugOrThrow(own.slug);
+  const documents: DisplayDoc[] =
+    detail && "documents" in detail
+      ? detail.documents.map((d) => ({ ...d, tag: "Auto-tagged: On file" }))
+      : [];
+
+  return renderPage(session.entityId, documents);
+}
+
+function renderPage(entityId: string, initialDocs: DisplayDoc[]) {
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2">
-        <DocumentUploader initialDocs={entity.documents.map((d) => ({ ...d, tag: "Auto-tagged: On file" }))} />
+        <DocumentUploader entityId={entityId} initialDocs={initialDocs} />
       </div>
 
       <div className="space-y-6">

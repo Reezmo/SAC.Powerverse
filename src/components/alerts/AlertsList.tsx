@@ -1,17 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, BellRing, Check } from "lucide-react";
 import type { AlertDTO } from "@/lib/api/alerts";
+import { followUpOnAlert } from "@/lib/api/alerts-actions";
 
 export function AlertsList({ alerts }: { alerts: AlertDTO[] }) {
   const [followedUp, setFollowedUp] = useState<Set<string>>(new Set());
+  const [isPending, startTransition] = useTransition();
 
-  function handleFollowUp(id: string) {
-    setFollowedUp((prev) => new Set(prev).add(id));
+  function handleFollowUp(alert: AlertDTO) {
+    startTransition(async () => {
+      try {
+        await followUpOnAlert(alert);
+        setFollowedUp((prev) => new Set(prev).add(alert.id));
+      } catch {
+        // Leave the button in its current state so the user can retry.
+      }
+    });
   }
 
   return (
@@ -38,8 +47,8 @@ export function AlertsList({ alerts }: { alerts: AlertDTO[] }) {
               <Button
                 size="sm"
                 variant={isFollowedUp ? "secondary" : "outline"}
-                disabled={isFollowedUp}
-                onClick={() => handleFollowUp(alert.id)}
+                disabled={isFollowedUp || isPending}
+                onClick={() => handleFollowUp(alert)}
               >
                 {isFollowedUp ? (
                   <>
