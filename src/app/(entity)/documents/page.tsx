@@ -8,23 +8,17 @@ import { AppUploadForm } from "@/components/submit/AppUploadForm";
 import { readSession } from "@/lib/auth/session";
 import { getEntities, getEntityBySlugOrThrow } from "@/lib/api/entities";
 import { getEntityIndicators } from "@/lib/api/indicators";
+import { listAppSubmissions } from "@/lib/api/apps";
 import { USE_MOCK_DATA } from "@/lib/api/client";
 import { MOCK_ENTITIES } from "@/lib/data/mockEntities";
 import { inferDocType } from "@/lib/api/documents";
+import type { AppSubmissionSummary } from "@/lib/types/schema";
 
 interface DisplayDoc {
   id: string;
   name: string;
   uploadedAt: string;
   tag: string;
-}
-
-interface AppHistoryEntry {
-  id: string;
-  date: string;
-  status: "approved" | "rejected" | "pending";
-  reason: string;
-  file: string;
 }
 
 const DOC_TYPE_LABELS: Record<string, string> = {
@@ -36,24 +30,31 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   app: "Annual Performance Plan",
 };
 
+function fileNameFromUrl(url: string): string {
+  const last = url.split("/").pop() ?? url;
+  try {
+    return decodeURIComponent(last);
+  } catch {
+    return last;
+  }
+}
+
 export default async function EntityDocumentsPage() {
   const session = await readSession();
-  const entityId = String(session?.entityId || "1");
 
   if (!session?.entityId && !USE_MOCK_DATA) {
     redirect("/login");
   }
 
-  const hasUploaded = entityId === "3" ? (globalThis as any).__MOCK_BIANCA_UPLOADED : false;
-  const isAppActive = entityId === "1" || hasUploaded;
+  const entityId = USE_MOCK_DATA ? "1" : (session!.entityId as string);
 
   // 1. Fetch general documents
   let documents: DisplayDoc[] = [];
   if (USE_MOCK_DATA) {
     const entity = MOCK_ENTITIES.find(e => e.id === entityId) || MOCK_ENTITIES[0];
-    documents = entity.documents.map((d) => ({ 
-      ...d, 
-      tag: DOC_TYPE_LABELS[inferDocType(d.name)] ?? "Uncategorized" 
+    documents = entity.documents.map((d) => ({
+      ...d,
+      tag: DOC_TYPE_LABELS[inferDocType(d.name)] ?? "Uncategorized"
     }));
   } else {
     const entities = await getEntities();
@@ -61,27 +62,20 @@ export default async function EntityDocumentsPage() {
     if (own) {
       const detail = await getEntityBySlugOrThrow(own.slug);
       if (detail && "documents" in detail) {
-        documents = detail.documents.map((d) => ({ 
-          ...d, 
-          tag: DOC_TYPE_LABELS[inferDocType(d.name)] ?? "Uncategorized" 
+        documents = detail.documents.map((d) => ({
+          ...d,
+          tag: DOC_TYPE_LABELS[inferDocType(d.name)] ?? "Uncategorized"
         }));
       }
     }
   }
 
-  // 2. Mock APP Submission History (Explicitly typed as AppHistoryEntry array)
-  let appHistory: AppHistoryEntry[] = [];
-  
-  if (entityId === "1") {
-    appHistory = [
-      { id: "app-2", date: "2026-09-01", status: "approved", reason: "Approved by DSAC. Tasks Extracted.", file: "APP_2026_Final.pdf" },
-      { id: "app-1", date: "2026-08-15", status: "rejected", reason: "Missing demographic targets for Q4.", file: "APP_2026_Draft_v1.pdf" }
-    ];
-  } else if (entityId === "3" && hasUploaded) {
-    appHistory = [
-      { id: "app-3", date: "Just now", status: "pending", reason: "Pending AI Extraction & DSAC Review", file: "Bianca_APP.pdf" }
-    ];
-  }
+  // 2. Real APP submission history from the backend (own entity, scoped
+  // server-side by the entity_officer's own entity_id claim).
+  const appHistory: AppSubmissionSummary[] = USE_MOCK_DATA
+    ? []
+    : await listAppSubmissions().catch(() => []);
+  const isAppActive = appHistory.some((a) => a.status === "approved");
 
   // 3. Fetch completed tasks to show "Task Evidence" linked proofs
   const indicatorsResponse = await getEntityIndicators(entityId, 1, 50).catch(() => null);
@@ -91,10 +85,10 @@ export default async function EntityDocumentsPage() {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold tracking-tight">Documents & Submissions</h2>
-      
+
       {/* Top Row: APP Upload & APP Submission History */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <AppUploadForm isAppActive={isAppActive} />
+        <AppUploadForm entityId={entityId} isAppActive={isAppActive} />
 
         <Card>
           <CardHeader>
@@ -120,15 +114,19 @@ export default async function EntityDocumentsPage() {
                 ) : (
                   appHistory.map((entry) => (
                     <TableRow key={entry.id}>
-                      <TableCell className="whitespace-nowrap">{entry.date}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {new Date(entry.uploadedAt).toLocaleDateString()}
+                      </TableCell>
                       <TableCell className="font-medium">
-                        {entry.file}
-                        <div className="text-xs text-muted-foreground mt-1">{entry.reason}</div>
+                        {fileNameFromUrl(entry.fileUrl)}
                       </TableCell>
                       <TableCell>
                         {entry.status === "approved" && <Badge className="bg-emerald-500">Approved</Badge>}
                         {entry.status === "rejected" && <Badge variant="destructive">Rejected</Badge>}
-                        {entry.status === "pending" && <Badge variant="outline" className="border-blue-500 text-blue-500">Pending</Badge>}
+                        {(entry.status === "pending_review" || entry.status === "ai_processed") && (
+                          <Badge variant="outline" className="border-blue-500 text-blue-500">Pending</Badge>
+                        )}
+                        {entry.status === "ai_failed" && <Badge variant="destructive">Analysis Failed</Badge>}
                       </TableCell>
                     </TableRow>
                   ))

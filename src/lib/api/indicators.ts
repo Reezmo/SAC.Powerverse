@@ -2,7 +2,7 @@
 
 import { apiRequest, USE_MOCK_DATA } from "./client";
 import { readSession } from "@/lib/auth/session";
-import type { AppIndicator, AppIndicatorQuarter, IndicatorSummary } from "../types/schema";
+import type { AppIndicator, AppIndicatorQuarter, AppIndicatorDetail, IndicatorSummary } from "../types/schema";
 
 // Generate 35 mock tasks for Thandi
 let MOCK_THANDI_TASKS: AppIndicator[] = Array.from({ length: 35 }, (_, i) => {
@@ -80,6 +80,22 @@ export async function submitQuarterProof(indicatorId: string, quarter: number, f
   });
 }
 
-// Stubs for Sipho's side
-export async function getIndicatorDetails(id: string): Promise<any> { return null; }
-export async function getIndicatorSummary(): Promise<any[]> { return []; }
+export async function getIndicatorDetails(id: string): Promise<AppIndicatorDetail | null> {
+  if (USE_MOCK_DATA) {
+    return null;
+  }
+  const session = await readSession();
+  try {
+    return await apiRequest<AppIndicatorDetail>(`/api/indicators/${id}`, session?.token);
+  } catch {
+    return null;
+  }
+}
+
+export async function getIndicatorSummary(): Promise<IndicatorSummary[]> {
+  if (USE_MOCK_DATA) {
+    return [];
+  }
+  const session = await readSession();
+  return apiRequest<IndicatorSummary[]>('/api/dsac/indicator-summary', session?.token);
+}

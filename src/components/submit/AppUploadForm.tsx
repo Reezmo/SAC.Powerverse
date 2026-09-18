@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { UploadCloud, FileText, CheckCircle2, X } from "lucide-react";
 import { uploadAppSubmission } from "@/lib/api/apps";
 
-export function AppUploadForm({ isAppActive = false }: { isAppActive?: boolean }) {
+export function AppUploadForm({
+  entityId,
+  isAppActive = false,
+}: {
+  entityId: string;
+  isAppActive?: boolean;
+}) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -35,6 +41,7 @@ export function AppUploadForm({ isAppActive = false }: { isAppActive?: boolean }
     setIsUploading(true);
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("entityId", entityId);
 
     try {
       await uploadAppSubmission(formData);

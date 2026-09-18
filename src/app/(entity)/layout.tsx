@@ -2,6 +2,8 @@ import { LayoutDashboard, UploadCloud } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { readSession } from "@/lib/auth/session";
+import { listAppSubmissions } from "@/lib/api/apps";
+import { USE_MOCK_DATA } from "@/lib/api/client";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" aria-hidden="true" /> },
@@ -10,14 +12,14 @@ const NAV_ITEMS = [
 
 export default async function EntityLayout({ children }: { children: React.ReactNode }) {
   const session = await readSession();
-  const entityId = session?.entityId;
 
-  // Determine dynamic state to update the notification bell
-  const hasUploaded = entityId === "3" ? (globalThis as any).__MOCK_BIANCA_UPLOADED : false;
-  const isAppActive = entityId === "1" || hasUploaded;
-  
+  // Determine dynamic state to update the notification bell from the
+  // entity's real APP submission history.
+  const appHistory = USE_MOCK_DATA ? [] : await listAppSubmissions().catch(() => []);
+  const isAppActive = appHistory.some((a) => a.status === "approved");
+
   // 1 alert if the APP is pending, 0 alerts if it is active.
-  const alertsCount = isAppActive ? 0 : 1; 
+  const alertsCount = isAppActive ? 0 : 1;
 
   return (
     <div className="flex min-h-screen">

@@ -174,11 +174,23 @@ export interface AppSubmissionIndicator {
   status: "not_started" | "in_progress" | "completed";
 }
 
+/** Matches AppIndicatorDetailDto exactly — returned by GET /api/indicators/{id}
+ * and inline within each item of the paginated GET /api/entities/{id}/indicators list. */
+export interface AppIndicatorDetail {
+  id: string;
+  name: string;
+  annualTarget?: number;
+  unit?: string;
+  status: "not_started" | "in_progress" | "completed";
+  quarters: AppIndicatorQuarter[];
+}
+
 export interface IndicatorSummary {
   entityId: string;
   entityName: string;
   percentComplete: number;
   percentRemaining: number;
+  totalIndicators: number;
 }
 
 export type FieldType =
