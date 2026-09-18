@@ -1,79 +1,59 @@
-import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { getEntities } from "@/lib/api/entities";
+"use client";
 
-export default async function DSACPortfolioPage() {
-  const entities = await getEntities();
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { getIndicatorSummary } from "@/lib/api/indicators";
+import type { IndicatorSummary } from "@/lib/types/schema";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export default function DSACPortfolioPage() {
+  const [data, setData] = useState<IndicatorSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getIndicatorSummary().then((summary) => {
+      setData(summary);
+      setLoading(false);
+    });
+  }, []);
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight">
-        Portfolio Overview ({entities.length} Entities)
-      </h2>
+      <h2 className="text-2xl font-bold tracking-tight">Portfolio Overview</h2>
 
       <Card>
         <CardHeader>
-          <CardTitle>Entity Compliance Status</CardTitle>
+          <CardTitle>Entity Task Completion Tracking</CardTitle>
+          <CardDescription>
+            Monitoring AI-extracted tasks across 26 Public Entities and 6 NPOs. 
+            Red represents incomplete tasks; Green represents completed tasks[cite: 1].
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Entity Name</TableHead>
-                <TableHead>Submission Status</TableHead>
-                <TableHead>Risk Level</TableHead>
-                <TableHead className="text-right">Performance Score</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {entities.map((entity) => (
-                <TableRow key={entity.id}>
-                  <TableCell className="font-medium">
-                    <Link
-                      href={`/entities/${entity.slug}`}
-                      className="hover:underline focus-visible:underline focus-visible:outline-none"
-                    >
-                      {entity.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        entity.status === "Submitted" ? "default" : "secondary"
-                      }
-                    >
-                      {entity.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        entity.risk === "High"
-                          ? "destructive"
-                          : entity.risk === "Watch"
-                            ? "outline"
-                            : "secondary"
-                      }
-                    >
-                      {entity.risk}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {entity.score}%
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {loading ? (
+             <Skeleton className="h-[400px] w-full" />
+          ) : (
+            <div className="h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
+                  <XAxis 
+                    dataKey="entityName" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={80} 
+                    tick={{ fontSize: 12 }} 
+                  />
+                  <YAxis tickFormatter={(tick) => `${tick}%`} />
+                  <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
+                  <Legend verticalAlign="top" height={36} />
+                  {/* Double bar graph configuration[cite: 1] */}
+                  <Bar dataKey="percentCompleted" name="Completed Tasks" fill="#10b981" />
+                  <Bar dataKey="percentRemaining" name="Tasks Remaining" fill="#ef4444" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

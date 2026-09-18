@@ -10,6 +10,7 @@ export type UserRole = "entity_officer" | "dsac_me" | "dsac_exec";
 export type SubmissionStatusValue = "Submitted" | "In Progress" | "Not Started";
 export type RiskLevel = "Low" | "Watch" | "High";
 
+
 /** GET /api/entities — one row per entity, for the portfolio table. */
 export interface EntityPortfolioDTO {
   id: string;
@@ -79,4 +80,76 @@ export interface AlertDTO {
   type: string;
   message: string;
   severity: "high" | "medium" | "low";
+}
+
+export interface KpiFormSchema {
+  id: string;
+  name: string;
+  schemaJson: string;
+  createdBy?: string;
+  createdAt: string;
+  isActive: boolean;
+}
+
+export interface EntityKpi {
+  id: string;
+  entityId: string;
+  formSchemaId?: string;
+  kpiName: string;
+  unit?: string;
+  fiveYearTarget?: number;
+  formValues: string;
+  status: 'draft' | 'sent' | 'received';
+  createdBy?: string;
+  createdAt: string;
+  sentAt?: string;
+  receivedAt?: string;
+}
+
+export interface AppSubmission {
+  id: string;
+  entityId: string;
+  fileUrl: string;
+  uploadedBy?: string;
+  uploadedAt: string;
+  status: 'pending_review' | 'ai_failed' | 'ai_processed' | 'approved' | 'rejected';
+  aiSummary?: string;
+  aiProcessedAt?: string;
+  aiProcessedBy?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+}
+
+export interface AppIndicatorQuarter {
+  id: string;
+  appIndicatorId: string;
+  quarter: number;
+  quarterTarget?: number;
+  status: 'not_started' | 'completed';
+  proofFileUrl?: string;
+  proofNotes?: string;
+  completedBy?: string;
+  completedAt?: string;
+}
+
+export interface AppIndicator {
+  id: string;
+  appSubmissionId: string;
+  entityId: string;
+  entityKpiId?: string;
+  name: string;
+  annualTarget?: number;
+  unit?: string;
+  matchConfidence?: 'matched' | 'unmatched' | 'manual';
+  isApproved: boolean;
+  status: 'not_started' | 'in_progress' | 'completed';
+  createdAt: string;
+}
+
+export interface IndicatorSummary {
+  entityId: string;
+  entityName: string;
+  percentComplete: number;
+  percentRemaining: number;
 }
