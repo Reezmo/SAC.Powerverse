@@ -32,7 +32,7 @@ export async function loginAs(role: string) {
 
   if (USE_MOCK_DATA) {
     throw new Error(
-      "NEXT_PUBLIC_API_URL is not set — login requires the real backend, mock mode is not supported for auth."
+      "NEXT_PUBLIC_API_URL is not set — login requires the real backend, mock mode is not supported for auth.",
     );
   }
 
@@ -47,11 +47,16 @@ export async function loginAs(role: string) {
       cache: "no-store",
     });
   } catch {
-    throw new ApiError("Could not reach the API to log in. Check NEXT_PUBLIC_API_URL.");
+    throw new ApiError(
+      "Could not reach the API to log in. Check NEXT_PUBLIC_API_URL.",
+    );
   }
 
   if (!response.ok) {
-    throw new ApiError(`Login failed with status ${response.status}`, response.status);
+    throw new ApiError(
+      `Login failed with status ${response.status}`,
+      response.status,
+    );
   }
 
   const { token } = (await response.json()) as LoginResponse;
