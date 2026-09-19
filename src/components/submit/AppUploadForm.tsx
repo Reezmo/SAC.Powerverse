@@ -41,15 +41,15 @@ export function AppUploadForm({
   async function handleUpload() {
     if (!file) return;
 
-    setPhase("compressing");
-    const compressed = await compressPdf(file);
-
-    setPhase("uploading");
-    const formData = new FormData();
-    formData.append("file", compressed);
-    formData.append("entityId", entityId);
-
     try {
+      setPhase("compressing");
+      const compressed = await compressPdf(file);
+
+      setPhase("uploading");
+      const formData = new FormData();
+      formData.append("file", compressed);
+      formData.append("entityId", entityId);
+
       await uploadAppSubmission(formData);
       setSuccess(true);
       setFile(null);
