@@ -40,10 +40,18 @@ export async function uploadAppSubmission(formData: FormData): Promise<AppSubmis
     };
   }
   const session = await readSession();
-  return apiRequest<AppSubmission>('/api/app-submissions/upload', session?.token, {
-    method: 'POST',
-    body: formData,
-  });
+  try {
+    return await apiRequest<AppSubmission>('/api/app-submissions/upload', session?.token, {
+      method: 'POST',
+      body: formData,
+    });
+  } catch (err) {
+    // TEMP: surface the real failure reason instead of Next.js's redacted
+    // production digest, to diagnose a live upload bug. Revert once fixed.
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("uploadAppSubmission failed:", detail);
+    throw new Error(`DEBUG uploadAppSubmission: ${detail}`);
+  }
 }
 
 export async function getSubmissionDetails(id: string): Promise<{
