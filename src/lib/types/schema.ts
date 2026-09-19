@@ -10,7 +10,6 @@ export type UserRole = "entity_officer" | "dsac_me" | "dsac_exec";
 export type SubmissionStatusValue = "Submitted" | "In Progress" | "Not Started";
 export type RiskLevel = "Low" | "Watch" | "High";
 
-/** GET /api/entities — one row per entity, for the portfolio table. */
 export interface EntityPortfolioDTO {
   id: string;
   slug: string;
@@ -36,7 +35,6 @@ export interface DocumentSummaryDTO {
   uploadedAt: string;
 }
 
-/** GET /api/entities/{slug} — portfolio row plus KPI rollup and documents. */
 export interface EntityDetailDTO extends EntityPortfolioDTO {
   kpis: KpiRollupDTO[];
   documents: DocumentSummaryDTO[];
@@ -51,7 +49,6 @@ export interface KPITargetDTO {
   unit: string | null;
 }
 
-/** GET /api/submissions — one row per submission (SubmissionSummaryDto on the backend). */
 export interface SubmissionDTO {
   id: string;
   entityId: string;
@@ -62,7 +59,6 @@ export interface SubmissionDTO {
   submittedAt: string | null;
 }
 
-/** GET /api/submissions/summary — dashboard stat cards. */
 export interface SubmissionSummaryDTO {
   inProgress: number;
   notStarted: number;
@@ -72,7 +68,6 @@ export interface SubmissionSummaryDTO {
   jobsCreated: number;
 }
 
-/** GET /api/alerts */
 export interface AlertDTO {
   id: string;
   entity: string;
@@ -160,9 +155,6 @@ export interface AppIndicator {
   createdAt: string;
 }
 
-/** Matches AppIndicatorResponseDto exactly — the shape actually returned
- * inline by GET /api/app-submissions/{id}, which is narrower than the full
- * AppIndicator record (no appSubmissionId/entityId/createdAt). */
 export interface AppSubmissionIndicator {
   id: string;
   entityKpiId?: string;
@@ -174,23 +166,12 @@ export interface AppSubmissionIndicator {
   status: "not_started" | "in_progress" | "completed";
 }
 
-/** Matches AppIndicatorDetailDto exactly — returned by GET /api/indicators/{id}
- * and inline within each item of the paginated GET /api/entities/{id}/indicators list. */
-export interface AppIndicatorDetail {
-  id: string;
-  name: string;
-  annualTarget?: number;
-  unit?: string;
-  status: "not_started" | "in_progress" | "completed";
-  quarters: AppIndicatorQuarter[];
-}
-
 export interface IndicatorSummary {
   entityId: string;
   entityName: string;
   percentComplete: number;
   percentRemaining: number;
-  totalIndicators: number;
+  totalIndicators?: number;
 }
 
 export type FieldType =

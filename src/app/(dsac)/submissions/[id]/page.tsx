@@ -14,7 +14,7 @@ import {
 } from "@/lib/api/apps";
 import type { AppSubmission, AppSubmissionIndicator } from "@/lib/types/schema";
 
-export default function SubmissionReviewPage() {
+export default function SubmissionDetailedReviewPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = params.id;
@@ -68,10 +68,11 @@ export default function SubmissionReviewPage() {
   }
 
   function handleApprove() {
+    if (!submission) return;
     setError(null);
     startDeciding(async () => {
       try {
-        await approveSubmission(id, Array.from(keptIds));
+        await approveSubmission(submission.id, Array.from(keptIds));
         router.push("/submissions");
       } catch {
         setError("Approval failed. Please try again.");
@@ -109,7 +110,9 @@ export default function SubmissionReviewPage() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Review APP Submission</h2>
-        <Badge variant={status === "approved" ? "default" : "secondary"}>{status}</Badge>
+        <Badge variant={status === "approved" ? "default" : "secondary"}>
+          {status.replace("_", " ")}
+        </Badge>
       </div>
 
       <Card>
@@ -137,14 +140,15 @@ export default function SubmissionReviewPage() {
           {submission.aiSummary && status !== "ai_failed" && (
             <div className="p-4 bg-muted rounded-md text-sm border-l-4 border-primary">
               <h4 className="font-bold mb-2">AI Summary</h4>
-              <p>{submission.aiSummary}</p>
+              <p className="whitespace-pre-wrap">{submission.aiSummary}</p>
             </div>
           )}
 
           {status === "ai_processed" && indicators.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-sm font-medium">
-                Extracted Indicators — uncheck any the AI got wrong before approving
+                Extracted Indicators — uncheck any the AI got wrong before
+                approving
               </h4>
               <div className="rounded-md border divide-y">
                 {indicators.map((indicator) => (
@@ -161,11 +165,16 @@ export default function SubmissionReviewPage() {
                     <div className="flex-1">
                       <p className="font-medium">{indicator.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        Target: {indicator.annualTarget ?? "—"} {indicator.unit ?? ""}
+                        Target: {indicator.annualTarget ?? "—"}{" "}
+                        {indicator.unit ?? ""}
                       </p>
                     </div>
                     <Badge
-                      variant={indicator.matchConfidence === "matched" ? "default" : "outline"}
+                      variant={
+                        indicator.matchConfidence === "matched"
+                          ? "default"
+                          : "outline"
+                      }
                       className="text-xs"
                     >
                       {indicator.matchConfidence ?? "unmatched"}
@@ -183,7 +192,7 @@ export default function SubmissionReviewPage() {
           )}
 
           {status === "ai_processed" && (
-            <div className="space-y-3 pt-4 border-t">
+            <div className="space-y-3 pt-4 border-t mt-4">
               {showRejectForm && (
                 <div className="space-y-2">
                   <textarea
@@ -201,14 +210,23 @@ export default function SubmissionReviewPage() {
                   disabled={isDeciding}
                   className="bg-emerald-600 hover:bg-emerald-700"
                 >
-                  <Check className="mr-2 h-4 w-4" aria-hidden="true" /> Approve & Generate Dashboard
+                  <Check className="mr-2 h-4 w-4" aria-hidden="true" /> Approve
+                  & Generate Dashboard
                 </Button>
                 {showRejectForm ? (
-                  <Button onClick={handleReject} disabled={isDeciding} variant="destructive">
-                    <X className="mr-2 h-4 w-4" aria-hidden="true" /> Confirm Reject
+                  <Button
+                    onClick={handleReject}
+                    disabled={isDeciding}
+                    variant="destructive"
+                  >
+                    <X className="mr-2 h-4 w-4" aria-hidden="true" /> Confirm
+                    Reject
                   </Button>
                 ) : (
-                  <Button onClick={() => setShowRejectForm(true)} variant="destructive">
+                  <Button
+                    onClick={() => setShowRejectForm(true)}
+                    variant="destructive"
+                  >
                     <X className="mr-2 h-4 w-4" aria-hidden="true" /> Reject APP
                   </Button>
                 )}
@@ -217,7 +235,7 @@ export default function SubmissionReviewPage() {
           )}
 
           {error && (
-            <p role="alert" className="text-sm text-destructive">
+            <p role="alert" className="text-sm text-destructive pt-2">
               {error}
             </p>
           )}

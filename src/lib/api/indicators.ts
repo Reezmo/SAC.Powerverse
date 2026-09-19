@@ -4,59 +4,42 @@ import { apiRequest, USE_MOCK_DATA } from "./client";
 import { readSession } from "@/lib/auth/session";
 import type { AppIndicator, AppIndicatorQuarter, IndicatorSummary } from "../types/schema";
 
-// Generate 35 mock tasks for Thandi
+// Generate mock tasks for Thandi (entityId: "1") to test pagination
 let MOCK_THANDI_TASKS: AppIndicator[] = Array.from({ length: 35 }, (_, i) => {
   const taskNames = [
     "Host Regional Cultural Workshops", "Distribute Local Arts Grants", 
-    "Refurbish Heritage Sites", "Publish Annual Report", "Conduct Staff Training"
+    "Refurbish Heritage Sites", "Publish Annual Report", "Conduct Staff Training", 
+    "Audit Financial Statements", "Update IT Infrastructure", "Community Outreach Program"
   ];
+  const units = ["Workshops", "ZAR", "Sites", "Reports", "People", "Audits", "Systems", "Events"];
+  
   let status: 'not_started' | 'in_progress' | 'completed' = 'not_started';
   if (i % 3 === 0) status = 'completed';
   else if (i % 2 === 0) status = 'in_progress';
 
   return {
-    id: `mock-thandi-task-${i + 1}`,
+    id: `mock-task-${i + 1}`,
     appSubmissionId: "mock-app-1",
     entityId: "1", 
-    name: `${taskNames[i % taskNames.length]} (Phase ${Math.floor(i / 5) + 1})`,
-    annualTarget: (i * 10) + 10,
-    unit: "Events",
+    name: `${taskNames[i % taskNames.length]} (Phase ${Math.floor(i / 8) + 1})`,
+    annualTarget: (i * 12) + 10,
+    unit: units[i % units.length],
     isApproved: true,
     status: status,
-    createdAt: new Date().toISOString()
+    createdAt: new Date(Date.now() - i * 86400000).toISOString()
   };
 });
 
-// Generate 5 mock tasks for Bianca
-let MOCK_BIANCA_TASKS: AppIndicator[] = Array.from({ length: 5 }, (_, i) => ({
-  id: `mock-bianca-task-${i + 1}`,
-  appSubmissionId: "mock-app-2",
-  entityId: "3", 
-  name: `New Activated Language Initiative ${i + 1}`,
-  annualTarget: 10,
-  unit: "Programs",
-  isApproved: true,
-  status: "not_started",
-  createdAt: new Date().toISOString()
-}));
-
 export async function getEntityIndicators(entityId: string, page = 1, pageSize = 10): Promise<{ data: AppIndicator[]; total: number }> {
   if (USE_MOCK_DATA) {
+    if (entityId !== "1") return { data: [], total: 0 };
+
     const start = (page - 1) * pageSize;
     const end = start + pageSize;
-    
-    if (entityId === "1") {
-      return { data: MOCK_THANDI_TASKS.slice(start, end), total: MOCK_THANDI_TASKS.length };
-    }
-    
-    if (entityId === "3") {
-      const hasUploaded = (globalThis as any).__MOCK_BIANCA_UPLOADED;
-      if (!hasUploaded) return { data: [], total: 0 };
-      
-      return { data: MOCK_BIANCA_TASKS.slice(start, end), total: MOCK_BIANCA_TASKS.length };
-    }
-    
-    return { data: [], total: 0 };
+    return {
+      data: MOCK_THANDI_TASKS.slice(start, end),
+      total: MOCK_THANDI_TASKS.length
+    };
   }
   const session = await readSession();
   return apiRequest(`/api/entities/${entityId}/indicators?page=${page}&pageSize=${pageSize}`, session?.token);
@@ -66,8 +49,9 @@ export async function submitQuarterProof(indicatorId: string, quarter: number, f
   if (USE_MOCK_DATA) {
     await new Promise(resolve => setTimeout(resolve, 800)); 
     
-    MOCK_THANDI_TASKS = MOCK_THANDI_TASKS.map(t => t.id === indicatorId ? { ...t, status: 'completed' } : t);
-    MOCK_BIANCA_TASKS = MOCK_BIANCA_TASKS.map(t => t.id === indicatorId ? { ...t, status: 'completed' } : t);
+    MOCK_THANDI_TASKS = MOCK_THANDI_TASKS.map(task => 
+      task.id === indicatorId ? { ...task, status: 'completed' } : task
+    );
 
     return { id: `mock-proof-${Date.now()}`, appIndicatorId: indicatorId, quarter, status: "completed" };
   }
@@ -78,12 +62,12 @@ export async function submitQuarterProof(indicatorId: string, quarter: number, f
   });
 }
 
-export async function getIndicatorDetails(id: string): Promise<{ indicator: AppIndicator; quarters: AppIndicatorQuarter[] } | null> {
+export async function getIndicatorDetails(id: string): Promise<{ indicator: AppIndicator; quarters: AppIndicatorQuarter[] }> {
   if (USE_MOCK_DATA) {
-    return null;
+    throw new Error("Mock data not implemented for indicator details");
   }
   const session = await readSession();
-  return apiRequest<{ indicator: AppIndicator; quarters: AppIndicatorQuarter[] }>(`/api/indicators/${id}`, session?.token);
+  return apiRequest(`/api/indicators/${id}`, session?.token);
 }
 
 export async function getIndicatorSummary(): Promise<IndicatorSummary[]> {
