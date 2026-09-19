@@ -33,13 +33,13 @@ export type ColorSpaceInfo = { name: string; components: number | null };
 // pdf-lib doesn't export a single common numeric wrapper type to instanceof-check
 // against (PDFNumber isn't exposed uniformly across the object graph), so we duck-type
 // the asNumber() method instead of using instanceof like asName/isTrue below.
-function asNumber(obj: unknown): number | null {
+export function asNumber(obj: unknown): number | null {
   return obj && typeof (obj as { asNumber?: unknown }).asNumber === "function"
     ? (obj as { asNumber: () => number }).asNumber()
     : null;
 }
 
-function asName(obj: unknown): string | null {
+export function asName(obj: unknown): string | null {
   return obj instanceof PDFName ? obj.decodeText() : null;
 }
 

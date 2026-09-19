@@ -1,5 +1,5 @@
 import { PDFDocument, PDFName, PDFObject, PDFRawStream, PDFRef, PDFStream } from "pdf-lib";
-import { describeColorSpace, filterNames, skipReason } from "@/lib/pdf/pdfImageSkip";
+import { asName, asNumber, describeColorSpace, filterNames, skipReason } from "@/lib/pdf/pdfImageSkip";
 import { decodeWithBrowser, decodeWithPdfjs } from "@/lib/pdf/pdfImageDecode";
 import { encodeCanvasAsJpeg } from "@/lib/pdf/canvasEncode";
 
@@ -16,16 +16,6 @@ const CARRY_OVER = ["Interpolate", "Intent", "OC", "StructParent"].map((key) => 
 const QUALITY = 70;
 const MAX_DIMENSION = 2000;
 const MIN_MASK_QUALITY = 60;
-
-function asNumber(obj: unknown): number | null {
-  return obj && typeof (obj as { asNumber?: unknown }).asNumber === "function"
-    ? (obj as { asNumber: () => number }).asNumber()
-    : null;
-}
-
-function asName(obj: unknown): string | null {
-  return obj instanceof PDFName ? obj.decodeText() : null;
-}
 
 function fitDimensions(width: number, height: number, maxDimension: number) {
   const scale = Math.min(1, maxDimension / Math.max(width, height));
@@ -114,7 +104,7 @@ async function compressPdfInner(file: File): Promise<File> {
         }
       }
       if (!canvas) {
-        canvas = await decodeWithPdfjs(stream, context, width, height, targetWidth, targetHeight);
+        canvas = await decodeWithPdfjs(stream, context, width, height, targetWidth);
       }
     } catch (err) {
       console.warn("Could not decode PDF image", ref.tag, err);

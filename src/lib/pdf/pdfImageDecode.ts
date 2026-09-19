@@ -106,13 +106,17 @@ async function wrapImageInPdf(
   return { bytes: await scratch.save({ useObjectStreams: false }), pageWidth };
 }
 
+// No `targetHeight` parameter: the scratch page built by wrapImageInPdf always
+// mirrors the source image's own width/height, so its aspect ratio is
+// guaranteed to match the image by construction. Height is therefore fully
+// determined by `targetWidth` via the uniform scale factor below — there's no
+// correct alternative behavior for a separate targetHeight to express.
 export async function decodeWithPdfjs(
   stream: PDFStream,
   srcContext: PDFContext,
   width: number,
   height: number,
   targetWidth: number,
-  targetHeight: number,
 ): Promise<HTMLCanvasElement> {
   const { bytes, pageWidth } = await wrapImageInPdf(stream, srcContext, width, height);
   // `destroy()` lives on the loading task, not on the resolved PDFDocumentProxy
