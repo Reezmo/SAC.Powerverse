@@ -17,8 +17,12 @@ export async function listAppSubmissions(
   const session = await readSession();
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
 
+  // Every other app-submission operation below hits /api/app-submissions/...
+  // — this list endpoint previously pointed at /api/Submissions, a
+  // different (KPI reporting) table entirely, which is why it always
+  // returned unrelated/empty data instead of actual APP submissions.
   return apiRequest<AppSubmissionSummary[]>(
-    `/api/Submissions${query}`,
+    `/api/app-submissions${query}`,
     session?.token,
   );
 }
