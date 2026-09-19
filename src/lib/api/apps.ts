@@ -2,11 +2,21 @@
 
 import { apiRequest, USE_MOCK_DATA } from "./client";
 import { readSession } from "@/lib/auth/session";
+import { getEntities } from "./entities";
 import type {
   AppSubmission,
   AppSubmissionSummary,
   AppSubmissionIndicator,
 } from "../types/schema";
+
+/** Resolves an entity's URL slug from its id, for redirecting Sipho to
+ * /entities/{slug} right after approving that entity's APP submission. */
+export async function getEntitySlug(entityId: string): Promise<string | null> {
+  if (USE_MOCK_DATA) return null;
+  const entities = await getEntities();
+  const match = entities.find((e) => String(e.id) === entityId);
+  return match && "slug" in match ? match.slug : null;
+}
 
 export async function listAppSubmissions(
   status?: string,
@@ -17,8 +27,12 @@ export async function listAppSubmissions(
   const session = await readSession();
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
 
+  // Every other app-submission operation below hits /api/app-submissions/...
+  // — this list endpoint previously pointed at /api/Submissions, a
+  // different (KPI reporting) table entirely, which is why it always
+  // returned unrelated/empty data instead of actual APP submissions.
   return apiRequest<AppSubmissionSummary[]>(
-    `/api/Submissions${query}`,
+    `/api/app-submissions${query}`,
     session?.token,
   );
 }
@@ -74,7 +88,7 @@ export async function approveSubmission(id: string, keptIndicatorIds?: string[])
   if (USE_MOCK_DATA) return;
   const session = await readSession();
   
-  const body = keptIndicatorIds ? JSON.stringify({ indicatorIds: keptIndicatorIds }) : undefined;
+  const body = keptIndicatorIds ? JSON.stringify({ keepIndicatorIds: keptIndicatorIds }) : undefined;
   const headers = keptIndicatorIds ? { 'Content-Type': 'application/json' } : undefined;
   
   return apiRequest(`/api/app-submissions/${id}/approve`, session?.token, { 

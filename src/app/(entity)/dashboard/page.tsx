@@ -9,7 +9,6 @@ import { getSubmissionSummary } from "@/lib/api/submissions";
 import { getEntities } from "@/lib/api/entities";
 import { getEntityKpis } from "@/lib/api/kpi";
 import { readSession } from "@/lib/auth/session";
-import { ProofUploadDrawer } from "./ProofUploadDrawer";
 import { EntitySwitcher } from "@/components/dashboard/EntitySwitcher";
 
 export const dynamic = "force-dynamic";
@@ -196,7 +195,9 @@ export default async function EntityDashboardPage({ searchParams }: PageProps) {
                       </TableCell>
                       <TableCell className="text-right">
                         {ind.status !== 'completed' ? (
-                          <ProofUploadDrawer indicatorId={ind.id} taskName={ind.name} />
+                          <Button variant="outline" size="sm" asChild>
+                            <Link href={`/dashboard/tasks/${ind.id}`}>View Task</Link>
+                          </Button>
                         ) : (
                           <span className="text-sm text-muted-foreground">Done</span>
                         )}

@@ -19,10 +19,10 @@ function SubmissionCard({ submission }: { submission: any }) {
           <div>
             <CardTitle className="flex items-center gap-2 mb-1">
               <FileText className="h-5 w-5 text-blue-500" />
-              {submission.entityName ? `${submission.entityName} - APP` : "Annual Performance Plan Submission"}
+              Annual Performance Plan Submission
             </CardTitle>
             <CardDescription>
-              Entity ID: {submission.entityId} • Submitted:{" "}
+              Submitted:{" "}
               {new Date(submission.uploadedAt || submission.createdAt || Date.now()).toLocaleDateString()}
             </CardDescription>
           </div>
@@ -56,6 +56,26 @@ function SubmissionCard({ submission }: { submission: any }) {
   );
 }
 
+function groupByEntity<T extends { entityId: string; entityName?: string }>(
+  submissions: T[],
+): { entityId: string; entityName: string; submissions: T[] }[] {
+  const groups = new Map<string, { entityId: string; entityName: string; submissions: T[] }>();
+  for (const sub of submissions) {
+    const key = sub.entityId;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.submissions.push(sub);
+    } else {
+      groups.set(key, {
+        entityId: sub.entityId,
+        entityName: sub.entityName || `Entity ${sub.entityId}`,
+        submissions: [sub],
+      });
+    }
+  }
+  return [...groups.values()].sort((a, b) => a.entityName.localeCompare(b.entityName));
+}
+
 export default function SubmissionsInboxPage() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,13 +89,15 @@ export default function SubmissionsInboxPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const entityGroups = groupByEntity(submissions);
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Inbox: APP Submissions</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Review entity performance plans and extract KPIs.
+            Review entity performance plans and extract KPIs, grouped by public entity.
           </p>
         </div>
       </div>
@@ -85,14 +107,24 @@ export default function SubmissionsInboxPage() {
           <Skeleton className="h-40 w-full" />
           <Skeleton className="h-40 w-full" />
         </div>
-      ) : submissions.length === 0 ? (
+      ) : entityGroups.length === 0 ? (
         <div className="rounded-xl border border-dashed p-12 text-center text-muted-foreground">
           No APP submissions found.
         </div>
       ) : (
-        <div className="space-y-6">
-          {submissions.map((sub) => (
-            <SubmissionCard key={sub.id} submission={sub} />
+        <div className="space-y-10">
+          {entityGroups.map((group) => (
+            <div key={group.entityId} className="space-y-4">
+              <div className="flex items-center gap-2 border-b pb-2">
+                <h3 className="text-lg font-semibold">{group.entityName}</h3>
+                <Badge variant="outline">{group.submissions.length}</Badge>
+              </div>
+              <div className="space-y-4">
+                {group.submissions.map((sub) => (
+                  <SubmissionCard key={sub.id} submission={sub} />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}

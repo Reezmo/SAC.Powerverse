@@ -4,21 +4,26 @@ import { TopNav } from "@/components/layout/TopNav";
 import { readSession } from "@/lib/auth/session";
 import { getAlerts } from "@/lib/api/alerts";
 
-const NAV_ITEMS = [
+const ALL_NAV_ITEMS = [
   {
     href: "/portfolio",
     label: "Portfolio",
     icon: <Globe className="h-4 w-4" aria-hidden="true" />,
   },
   {
-    href: "/submissions",
-    label: "APP Submissions",
-    icon: <FileText className="h-4 w-4" aria-hidden="true" />,
-  },
-  {
     href: "/alerts",
     label: "Alerts & Risk",
     icon: <AlertTriangle className="h-4 w-4" aria-hidden="true" />,
+  },
+  {
+    href: "/kpi-builder",
+    label: "KPI Builder",
+    icon: <ClipboardList className="h-4 w-4" aria-hidden="true" />,
+  },
+  {
+    href: "/submissions",
+    label: "APP Submissions",
+    icon: <FileCheck className="h-4 w-4" aria-hidden="true" />,
   },
 ];
 

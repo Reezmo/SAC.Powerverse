@@ -8,6 +8,7 @@ import { AppUploadForm } from "@/components/submit/AppUploadForm";
 import { readSession } from "@/lib/auth/session";
 import { getEntities, getEntityBySlugOrThrow } from "@/lib/api/entities";
 import { getEntityIndicators } from "@/lib/api/indicators";
+import { listAppSubmissions } from "@/lib/api/apps";
 import { USE_MOCK_DATA } from "@/lib/api/client";
 import { MOCK_ENTITIES } from "@/lib/data/mockEntities";
 import { inferDocType } from "@/lib/api/documents";
@@ -25,6 +26,23 @@ interface AppHistoryEntry {
   status: "approved" | "rejected" | "pending";
   reason: string;
   file: string;
+}
+
+const APP_STATUS_DISPLAY: Record<
+  string,
+  { status: AppHistoryEntry["status"]; reason: string }
+> = {
+  pending_review: { status: "pending", reason: "Awaiting DSAC review" },
+  ai_failed: { status: "pending", reason: "AI processing failed, awaiting reprocessing" },
+  ai_processed: { status: "pending", reason: "AI extracted tasks, awaiting DSAC approval" },
+  approved: { status: "approved", reason: "Approved by DSAC. Tasks extracted." },
+  rejected: { status: "rejected", reason: "Rejected by DSAC." },
+};
+
+function fileNameFromUrl(fileUrl: string): string {
+  const withoutQuery = fileUrl.split(/[?#]/)[0];
+  const segments = withoutQuery.split("/");
+  return segments[segments.length - 1] || fileUrl;
 }
 
 const DOC_TYPE_LABELS: Record<string, string> = {
@@ -74,16 +92,27 @@ export default async function EntityDocumentsPage() {
     }
   }
 
-  // 3. Mock APP Submission History
+  // 3. APP Submission History
   let appHistory: AppHistoryEntry[] = [];
-  if (isAppActive) {
-    appHistory = [
-      { id: "app-2", date: "2026-09-01", status: "approved", reason: "Approved by DSAC. Tasks Extracted.", file: "APP_2026_Final.pdf" }
-    ];
+  if (USE_MOCK_DATA) {
+    appHistory = isAppActive
+      ? [{ id: "app-2", date: "2026-09-01", status: "approved", reason: "Approved by DSAC. Tasks Extracted.", file: "APP_2026_Final.pdf" }]
+      : [{ id: "app-1", date: "2026-08-15", status: "pending", reason: "Awaiting APP Upload", file: "None" }];
   } else {
-    appHistory = [
-      { id: "app-1", date: "2026-08-15", status: "pending", reason: "Awaiting APP Upload", file: "None" }
-    ];
+    const submissions = await listAppSubmissions().catch(() => []);
+    appHistory = submissions
+      .filter((s) => s.entityId === entityId)
+      .map((s) => {
+        const display = APP_STATUS_DISPLAY[s.status] ?? { status: "pending" as const, reason: s.status };
+        return {
+          id: s.id,
+          date: new Date(s.uploadedAt).toLocaleDateString(),
+          status: display.status,
+          reason: display.reason,
+          file: fileNameFromUrl(s.fileUrl),
+        };
+      })
+      .sort((a, b) => b.date.localeCompare(a.date));
   }
 
   return (

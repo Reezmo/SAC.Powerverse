@@ -13,9 +13,13 @@ const K = {
 
 const CARRY_OVER = ["Interpolate", "Intent", "OC", "StructParent"].map((key) => PDFName.of(key));
 
-const QUALITY = 70;
-const MAX_DIMENSION = 2000;
-const MIN_MASK_QUALITY = 60;
+// Tuned aggressively because Vercel hard-caps Serverless Function request
+// bodies at 4.5mb regardless of next.config.ts — there's no server-side
+// fallback for a file that doesn't compress enough, so it's worth losing
+// more visual quality here than a typical "compress this PDF" tool would.
+const QUALITY = 50;
+const MAX_DIMENSION = 1600;
+const MIN_MASK_QUALITY = 45;
 
 function fitDimensions(width: number, height: number, maxDimension: number) {
   const scale = Math.min(1, maxDimension / Math.max(width, height));

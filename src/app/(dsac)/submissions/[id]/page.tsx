@@ -9,6 +9,7 @@ import { BrainCircuit, Check, X } from "lucide-react";
 import {
   analyzeSubmission,
   approveSubmission,
+  getEntitySlug,
   getSubmissionDetails,
   rejectSubmission,
 } from "@/lib/api/apps";
@@ -73,7 +74,11 @@ export default function SubmissionDetailedReviewPage() {
     startDeciding(async () => {
       try {
         await approveSubmission(submission.id, Array.from(keptIds));
-        router.push("/submissions");
+        // Send Sipho straight to the entity's detail page (which now shows
+        // the extracted tasks) instead of the flat submissions list, so the
+        // populated dashboard is visible immediately after approving.
+        const slug = await getEntitySlug(submission.entityId);
+        router.push(slug ? `/entities/${slug}` : "/submissions");
       } catch {
         setError("Approval failed. Please try again.");
       }
