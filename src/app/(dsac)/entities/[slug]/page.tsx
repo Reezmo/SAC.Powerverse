@@ -1,16 +1,38 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, FileText } from "lucide-react";
 import { getEntityBySlugOrThrow } from "@/lib/api/entities";
+import { getEntityIndicators } from "@/lib/api/indicators";
 
-export default async function EntityDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+interface PageProps {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function EntityDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const page = parseInt(resolvedSearchParams.page || "1", 10);
   const entity = await getEntityBySlugOrThrow(slug);
 
   if (!entity) {
     notFound();
   }
+
+  const indicatorsResponse = await getEntityIndicators(entity.id, page, 10).catch(() => null);
+  const indicators = Array.isArray(indicatorsResponse) ? indicatorsResponse : (indicatorsResponse?.data || []);
+  const total = Array.isArray(indicatorsResponse)
+    ? indicatorsResponse.length
+    : (indicatorsResponse?.total || indicators.length);
+  const totalPages = Math.ceil(total / 10);
+
+  const notStarted = indicators.filter((i) => i.status === "not_started").length;
+  const inProgress = indicators.filter((i) => i.status === "in_progress").length;
+  const completed = indicators.filter((i) => i.status === "completed").length;
 
   return (
     <div className="space-y-6">
@@ -82,6 +104,73 @@ export default async function EntityDetailPage({ params }: { params: Promise<{ s
           </CardContent>
         </Card>
       </div>
+
+      {indicators.length > 0 && (
+        <div className="space-y-6">
+          <h3 className="text-xl font-bold tracking-tight border-b pb-2">Granular Task Tracking</h3>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Not Started</CardTitle></CardHeader>
+              <CardContent><div className="text-2xl font-bold text-amber-500">{notStarted}</div></CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">In Progress</CardTitle></CardHeader>
+              <CardContent><div className="text-2xl font-bold text-blue-500">{inProgress}</div></CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Completed</CardTitle></CardHeader>
+              <CardContent><div className="text-2xl font-bold text-emerald-500">{completed}</div></CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Extracted Tasks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Task Name</TableHead>
+                    <TableHead>Target</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {indicators.map((ind) => (
+                    <TableRow key={ind.id}>
+                      <TableCell className="font-medium">{ind.name}</TableCell>
+                      <TableCell>{ind.annualTarget} {ind.unit}</TableCell>
+                      <TableCell>
+                        <Badge variant={ind.status === "completed" ? "default" : "secondary"}>
+                          {ind.status.replace("_", " ")}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-6 border-t mt-4">
+                  <span className="text-sm text-muted-foreground">
+                    Showing page {page} of {totalPages} ({total} total tasks)
+                  </span>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" disabled={page <= 1} asChild>
+                      <Link href={page > 1 ? `/entities/${slug}?page=${page - 1}` : "#"}>Previous</Link>
+                    </Button>
+                    <Button variant="outline" size="sm" disabled={page >= totalPages} asChild>
+                      <Link href={page < totalPages ? `/entities/${slug}?page=${page + 1}` : "#"}>Next</Link>
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

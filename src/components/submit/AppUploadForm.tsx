@@ -54,11 +54,8 @@ export function AppUploadForm({
       setSuccess(true);
       setFile(null);
       router.refresh(); // Tells Next.js to reload the page data and unlock the KPI section
-    } catch (err) {
-      // TEMP: verbose error for debugging a production upload failure.
-      // Revert to the generic message once diagnosed.
-      const detail = err instanceof Error ? err.message : String(err);
-      setError(`Failed to upload the APP: ${detail}`);
+    } catch {
+      setError("Failed to upload the APP. Please try again.");
     } finally {
       setPhase("idle");
       if (inputRef.current) inputRef.current.value = "";

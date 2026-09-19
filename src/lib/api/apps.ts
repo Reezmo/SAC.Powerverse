@@ -2,11 +2,21 @@
 
 import { apiRequest, USE_MOCK_DATA } from "./client";
 import { readSession } from "@/lib/auth/session";
+import { getEntities } from "./entities";
 import type {
   AppSubmission,
   AppSubmissionSummary,
   AppSubmissionIndicator,
 } from "../types/schema";
+
+/** Resolves an entity's URL slug from its id, for redirecting Sipho to
+ * /entities/{slug} right after approving that entity's APP submission. */
+export async function getEntitySlug(entityId: string): Promise<string | null> {
+  if (USE_MOCK_DATA) return null;
+  const entities = await getEntities();
+  const match = entities.find((e) => String(e.id) === entityId);
+  return match && "slug" in match ? match.slug : null;
+}
 
 export async function listAppSubmissions(
   status?: string,
@@ -44,18 +54,10 @@ export async function uploadAppSubmission(formData: FormData): Promise<AppSubmis
     };
   }
   const session = await readSession();
-  try {
-    return await apiRequest<AppSubmission>('/api/app-submissions/upload', session?.token, {
-      method: 'POST',
-      body: formData,
-    });
-  } catch (err) {
-    // TEMP: surface the real failure reason instead of Next.js's redacted
-    // production digest, to diagnose a live upload bug. Revert once fixed.
-    const detail = err instanceof Error ? err.message : String(err);
-    console.error("uploadAppSubmission failed:", detail);
-    throw new Error(`DEBUG uploadAppSubmission: ${detail}`);
-  }
+  return apiRequest<AppSubmission>('/api/app-submissions/upload', session?.token, {
+    method: 'POST',
+    body: formData,
+  });
 }
 
 export async function getSubmissionDetails(id: string): Promise<{
@@ -86,7 +88,7 @@ export async function approveSubmission(id: string, keptIndicatorIds?: string[])
   if (USE_MOCK_DATA) return;
   const session = await readSession();
   
-  const body = keptIndicatorIds ? JSON.stringify({ indicatorIds: keptIndicatorIds }) : undefined;
+  const body = keptIndicatorIds ? JSON.stringify({ keepIndicatorIds: keptIndicatorIds }) : undefined;
   const headers = keptIndicatorIds ? { 'Content-Type': 'application/json' } : undefined;
   
   return apiRequest(`/api/app-submissions/${id}/approve`, session?.token, { 
