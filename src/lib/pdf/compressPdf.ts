@@ -90,6 +90,10 @@ async function compressPdfInner(file: File): Promise<File> {
     if (!width || !height) continue;
 
     const isMask = maskRefs.has(ref.tag);
+    // wantGray/MIN_MASK_QUALITY are inert until canvasEncode.ts can emit a real
+    // single-channel JPEG (see its docstring) — encoded.grayscale is always
+    // false today, so the isMask branch below always `continue`s past the
+    // point where these would matter.
     const wantGray = isMask;
     const quality = isMask ? Math.max(QUALITY, MIN_MASK_QUALITY) : QUALITY;
     const { width: targetWidth, height: targetHeight } = fitDimensions(width, height, MAX_DIMENSION);
