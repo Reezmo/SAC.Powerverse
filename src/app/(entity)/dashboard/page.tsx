@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, FileUp } from "lucide-react";
 import { getEntityIndicators } from "@/lib/api/indicators";
-import { getSubmissionSummary } from "@/lib/api/submissions";
 import { getEntities } from "@/lib/api/entities";
 import { getEntityKpis } from "@/lib/api/kpi";
 import { readSession } from "@/lib/auth/session";
@@ -42,18 +41,27 @@ export default async function EntityDashboardPage({ searchParams }: PageProps) {
   // 3. Fetch Assigned KPIs directly from GET /api/Entities/{id}/kpis
   const assignedKpis = await getEntityKpis(activeEntity.id).catch(() => []);
 
-  // 4. Fetch granular task data and summary
-  const [summary, indicatorsResponse] = await Promise.all([
-    getSubmissionSummary(),
+  // 4. Fetch granular task data (paginated) and the full set for the
+  // summary cards — the cards must reflect every task, not just the
+  // current page, so this can't reuse the paginated response above.
+  const [allIndicatorsResponse, indicatorsResponse] = await Promise.all([
+    getEntityIndicators(activeEntity.id, 1, 1000).catch(() => null),
     getEntityIndicators(activeEntity.id, page, 10).catch(() => null)
   ]);
 
+  const allIndicators = Array.isArray(allIndicatorsResponse) ? allIndicatorsResponse : (allIndicatorsResponse?.data || []);
+  const summary = {
+    notStarted: allIndicators.filter((i) => i.status === "not_started").length,
+    inProgress: allIndicators.filter((i) => i.status === "in_progress").length,
+    completed: allIndicators.filter((i) => i.status === "completed").length,
+  };
+
   const indicators = Array.isArray(indicatorsResponse) ? indicatorsResponse : (indicatorsResponse?.data || []);
-  const total = Array.isArray(indicatorsResponse) 
-    ? indicatorsResponse.length 
+  const total = Array.isArray(indicatorsResponse)
+    ? indicatorsResponse.length
     : (indicatorsResponse?.total || indicators.length);
   const totalPages = Math.ceil(total / 10);
-  
+
   const isAppInactive = total === 0;
 
   return (
