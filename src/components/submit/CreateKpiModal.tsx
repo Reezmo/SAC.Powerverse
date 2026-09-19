@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Check } from "lucide-react";
 import { sendKpiAction, getEntitiesForDropdown } from "@/lib/api/kpi-actions";
+import { loadLatestKpiFormSchema } from "@/lib/api/kpi-form-actions";
+import { DynamicFieldInput } from "./DynamicFieldInput";
+import type { FieldDef } from "@/lib/types/schema";
 
 export function CreateKpiModal({
   isOpen,
@@ -15,6 +18,8 @@ export function CreateKpiModal({
   onClose: () => void;
 }) {
   const [entities, setEntities] = useState<{ id: string; name: string }[]>([]);
+  const [schemaFields, setSchemaFields] = useState<FieldDef[]>([]);
+  const [isLoadingSchema, setIsLoadingSchema] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +27,11 @@ export function CreateKpiModal({
   useEffect(() => {
     if (isOpen) {
       getEntitiesForDropdown().then(setEntities).catch(console.error);
+      setIsLoadingSchema(true);
+      loadLatestKpiFormSchema()
+        .then((schema) => setSchemaFields(schema?.fields ?? []))
+        .catch(() => setSchemaFields([]))
+        .finally(() => setIsLoadingSchema(false));
     }
   }, [isOpen]);
 
@@ -34,20 +44,21 @@ export function CreateKpiModal({
 
     const formData = new FormData(e.currentTarget);
 
-    // Programmatically build the JSON configuration based on the checkboxes
-    const formConfig = {
-      requireBudget: formData.get("reqBudget") === "on",
-      requireJobs: formData.get("reqJobs") === "on",
-      requireNotes: formData.get("reqNotes") === "on",
-      requireEvidence: formData.get("reqEvidence") === "on",
-    };
+    // Build formValues from whatever the saved KPI form schema defines,
+    // rather than a fixed set of checkboxes — this makes the schema built
+    // in the KPI Form Builder (/kpi-builder) the actual reporting
+    // requirements sent to the entity for this KPI.
+    const formConfig: Record<string, string | boolean> = {};
+    for (const field of schemaFields) {
+      formConfig[field.id] = field.type === "checkbox" ? formData.get(field.id) === "on" : String(formData.get(field.id) ?? "");
+    }
 
     const payload = {
       entityId: formData.get("entityId") as string,
       kpiName: formData.get("kpiName") as string,
       unit: formData.get("unit") as string,
       fiveYearTarget: Number(formData.get("fiveYearTarget")),
-      formValues: JSON.stringify(formConfig), // Backend gets the JSON it wants
+      formValues: JSON.stringify(formConfig),
     };
 
     try {
@@ -135,74 +146,26 @@ export function CreateKpiModal({
               </div>
             </div>
 
-            {/* User-friendly checkbox UI replaces the raw JSON input */}
+            {/* Reporting requirements come from the schema built in the KPI
+                Form Builder, so what Sipho designs there is exactly what
+                the entity officer fills in for this KPI. */}
             <div className="space-y-3 pt-2 border-t mt-4">
               <Label>Reporting Requirements</Label>
-              <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-lg border">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="reqBudget"
-                    name="reqBudget"
-                    className="h-4 w-4 rounded border-input accent-primary"
-                    defaultChecked
-                  />
-                  <Label
-                    htmlFor="reqBudget"
-                    className="font-normal cursor-pointer text-xs"
-                  >
-                    Require Budget Spent
-                  </Label>
+              {isLoadingSchema ? (
+                <p className="text-xs text-muted-foreground">Loading form schema...</p>
+              ) : schemaFields.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No KPI form schema has been built yet. Visit the KPI Form Builder to
+                  define what entities must report for this KPI, or send it now with
+                  no additional reporting requirements.
+                </p>
+              ) : (
+                <div className="space-y-4 bg-muted/20 p-4 rounded-lg border">
+                  {schemaFields.map((field) => (
+                    <DynamicFieldInput key={field.id} field={field} />
+                  ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="reqJobs"
-                    name="reqJobs"
-                    className="h-4 w-4 rounded border-input accent-primary"
-                  />
-                  <Label
-                    htmlFor="reqJobs"
-                    className="font-normal cursor-pointer text-xs"
-                  >
-                    Require Jobs Created
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="reqNotes"
-                    name="reqNotes"
-                    className="h-4 w-4 rounded border-input accent-primary"
-                    defaultChecked
-                  />
-                  <Label
-                    htmlFor="reqNotes"
-                    className="font-normal cursor-pointer text-xs"
-                  >
-                    Require Variance Notes
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="reqEvidence"
-                    name="reqEvidence"
-                    className="h-4 w-4 rounded border-input accent-primary"
-                    defaultChecked
-                  />
-                  <Label
-                    htmlFor="reqEvidence"
-                    className="font-normal cursor-pointer text-xs"
-                  >
-                    Require Evidence (Doc)
-                  </Label>
-                </div>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-tight">
-                These selections dictate which fields the entity officer must
-                complete when submitting their quarterly report for this KPI.
-              </p>
+              )}
             </div>
 
             {error && (
