@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { UploadCloud, FileText, CheckCircle2, X } from "lucide-react";
 import { uploadAppSubmission } from "@/lib/api/apps";
+import { compressPdf } from "@/lib/pdf/compressPdf";
+
+type UploadPhase = "idle" | "compressing" | "uploading";
 
 export function AppUploadForm({
   entityId,
@@ -16,7 +19,7 @@ export function AppUploadForm({
 }) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [phase, setPhase] = useState<UploadPhase>("idle");
   const [success, setSuccess] = useState(isAppActive);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,13 +40,16 @@ export function AppUploadForm({
 
   async function handleUpload() {
     if (!file) return;
-    
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("entityId", entityId);
 
     try {
+      setPhase("compressing");
+      const compressed = await compressPdf(file);
+
+      setPhase("uploading");
+      const formData = new FormData();
+      formData.append("file", compressed);
+      formData.append("entityId", entityId);
+
       await uploadAppSubmission(formData);
       setSuccess(true);
       setFile(null);
@@ -51,7 +57,7 @@ export function AppUploadForm({
     } catch {
       setError("Failed to upload the APP. Please try again.");
     } finally {
-      setIsUploading(false);
+      setPhase("idle");
       if (inputRef.current) inputRef.current.value = "";
     }
   }
@@ -124,13 +130,17 @@ export function AppUploadForm({
           )}
 
           {file && (
-            <Button 
-              type="button" 
-              onClick={handleUpload} 
-              disabled={isUploading}
+            <Button
+              type="button"
+              onClick={handleUpload}
+              disabled={phase !== "idle"}
               className="w-full"
             >
-              {isUploading ? "Uploading..." : "Confirm & Upload APP"}
+              {phase === "compressing"
+                ? "Compressing..."
+                : phase === "uploading"
+                  ? "Uploading..."
+                  : "Confirm & Upload APP"}
             </Button>
           )}
 
