@@ -44,9 +44,21 @@ export default async function EntityDashboardPage({ searchParams }: PageProps) {
   // 4. Fetch granular task data (paginated) and the full set for the
   // summary cards — the cards must reflect every task, not just the
   // current page, so this can't reuse the paginated response above.
+  // pageSize is capped at 100 by the backend (GET /api/entities/{id}/indicators
+  // returns 400 above that) — a single entity isn't expected to exceed 100
+  // granular tasks, but if that assumption breaks, the cards will undercount
+  // rather than fail outright.
+  let dashboardFetchError: string | null = null;
   const [allIndicatorsResponse, indicatorsResponse] = await Promise.all([
-    getEntityIndicators(activeEntity.id, 1, 1000).catch(() => null),
-    getEntityIndicators(activeEntity.id, page, 10).catch(() => null)
+    getEntityIndicators(activeEntity.id, 1, 100).catch((err) => {
+      console.error("Failed to load full indicator set for summary cards:", err);
+      return null;
+    }),
+    getEntityIndicators(activeEntity.id, page, 10).catch((err) => {
+      console.error("Failed to load entity indicators:", err);
+      dashboardFetchError = err instanceof Error ? err.message : String(err);
+      return null;
+    })
   ]);
 
   const allIndicators = Array.isArray(allIndicatorsResponse) ? allIndicatorsResponse : (allIndicatorsResponse?.data || []);
@@ -62,7 +74,7 @@ export default async function EntityDashboardPage({ searchParams }: PageProps) {
     : (indicatorsResponse?.total || indicators.length);
   const totalPages = Math.ceil(total / 10);
 
-  const isAppInactive = total === 0;
+  const isAppInactive = total === 0 && !dashboardFetchError;
 
   return (
     <div className="space-y-8">
@@ -117,7 +129,21 @@ export default async function EntityDashboardPage({ searchParams }: PageProps) {
       </Card>
 
       {/* CONDITIONAL GRANULAR TASK UI */}
-      {isAppInactive ? (
+      {dashboardFetchError ? (
+        <Card className="border-destructive border-l-4 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Could Not Load Granular Tasks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {dashboardFetchError}
+            </p>
+          </CardContent>
+        </Card>
+      ) : isAppInactive ? (
         <Card className="border-amber-500 border-l-4 bg-amber-500/5">
           <CardHeader>
             <CardTitle className="text-amber-700 flex items-center gap-2">
