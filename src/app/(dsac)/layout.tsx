@@ -1,4 +1,4 @@
-import { Globe, AlertTriangle, ClipboardList, FileCheck } from "lucide-react";
+import { Globe, AlertTriangle, ClipboardList, FileCheck, Users } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { readSession } from "@/lib/auth/session";
@@ -10,6 +10,11 @@ const ALL_NAV_ITEMS = [
     href: "/portfolio",
     label: "Portfolio",
     icon: <Globe className="h-4 w-4" aria-hidden="true" />,
+  },
+  {
+    href: "/roster",
+    label: "Entity Roster",
+    icon: <Users className="h-4 w-4" aria-hidden="true" />,
   },
   {
     href: "/alerts",
