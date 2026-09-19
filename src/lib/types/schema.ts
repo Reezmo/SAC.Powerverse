@@ -76,6 +76,32 @@ export interface AlertDTO {
   severity: "high" | "medium" | "low";
 }
 
+export interface CycleAggregateDTO {
+  cycleId: string;
+  cycleLabel: string;
+  dueDate: string;
+  submittedCount: number;
+  missedCount: number;
+  otherCount: number;
+}
+
+export interface PortfolioTrendDTO {
+  cycles: CycleAggregateDTO[];
+}
+
+export interface CyclePointDTO {
+  cycleId: string;
+  cycleLabel: string;
+  dueDate: string;
+  status: "not_started" | "in_progress" | "submitted" | "missed";
+}
+
+export interface EntityTrendDTO {
+  entityId: string;
+  entityName: string;
+  cycles: CyclePointDTO[];
+}
+
 export interface KpiFormSchema {
   id: string;
   name: string;

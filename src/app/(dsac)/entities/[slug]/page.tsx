@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, FileText } from "lucide-react";
 import { getEntityBySlugOrThrow } from "@/lib/api/entities";
 import { getEntityIndicators } from "@/lib/api/indicators";
+import { getEntityTrend } from "@/lib/api/trends";
+import { EntityTrendTimeline } from "./EntityTrendTimeline";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -24,11 +26,14 @@ export default async function EntityDetailPage({ params, searchParams }: PagePro
   }
 
   let indicatorsFetchFailed = false;
-  const indicatorsResponse = await getEntityIndicators(entity.id, page, 10).catch((err) => {
-    console.error("Failed to load entity indicators:", err);
-    indicatorsFetchFailed = true;
-    return null;
-  });
+  const [indicatorsResponse, trend] = await Promise.all([
+    getEntityIndicators(entity.id, page, 10).catch((err) => {
+      console.error("Failed to load entity indicators:", err);
+      indicatorsFetchFailed = true;
+      return null;
+    }),
+    getEntityTrend(entity.id),
+  ]);
   const indicators = Array.isArray(indicatorsResponse) ? indicatorsResponse : (indicatorsResponse?.data || []);
   const total = Array.isArray(indicatorsResponse)
     ? indicatorsResponse.length
@@ -109,6 +114,8 @@ export default async function EntityDetailPage({ params, searchParams }: PagePro
           </CardContent>
         </Card>
       </div>
+
+      {trend && trend.cycles.length > 0 && <EntityTrendTimeline cycles={trend.cycles} />}
 
       <div className="space-y-6">
         <h3 className="text-xl font-bold tracking-tight border-b pb-2">Granular Task Tracking</h3>
